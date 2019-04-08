@@ -2,13 +2,13 @@
 Support for Airzone thermostats
 """
 import logging
+from homeassistant.components.climate import ClimateDevice
 
-from homeassistant.components.climate import (
+from homeassistant.components.climate.const import (
     STATE_AUTO, STATE_MANUAL, SUPPORT_OPERATION_MODE, 
     ATTR_TARGET_TEMP_HIGH, ATTR_TARGET_TEMP_LOW,
     SUPPORT_TARGET_TEMPERATURE, SUPPORT_FAN_MODE, SUPPORT_HOLD_MODE, 
-    SUPPORT_AUX_HEAT, SUPPORT_ON_OFF, 
-    ClimateDevice)
+    SUPPORT_AUX_HEAT, SUPPORT_ON_OFF)
 
 from homeassistant.const import (CONF_HOST, CONF_PORT, ATTR_TEMPERATURE, TEMP_CELSIUS)
 from datetime import timedelta
