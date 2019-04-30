@@ -1,0 +1,1 @@
+"""Airzone integration"""
