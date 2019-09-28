@@ -4,11 +4,20 @@ Support for Airzone thermostats
 import logging
 from homeassistant.components.climate import ClimateDevice
 
-from homeassistant.components.climate.const import (
-    STATE_AUTO, STATE_MANUAL, SUPPORT_OPERATION_MODE, 
-    ATTR_TARGET_TEMP_HIGH, ATTR_TARGET_TEMP_LOW,
-    SUPPORT_TARGET_TEMPERATURE, SUPPORT_FAN_MODE, SUPPORT_HOLD_MODE, 
-    SUPPORT_AUX_HEAT, SUPPORT_ON_OFF)
+from homeassistant.components.climate.const import {
+    SUPPORT_TARGET_TEMPERATURE,
+    SUPPORT_FAN_MODE,
+    SUPPORT_PRESET_MODE,
+    SUPPORT_AUX_HEAT
+    HVAC_MODE_AUTO,
+    HVAC_MODE_OFF,
+    HVAC_MODE_COOL,
+    HVAC_MODE_HEAT,
+    HVAC_MODE_HEAT_COOL,
+    HVAC_MODE_FAN_MODEOFF,
+    HVAC_MODES,
+    PRESET_NONE,
+}
 
 from homeassistant.const import (CONF_HOST, CONF_PORT, ATTR_TEMPERATURE, TEMP_CELSIUS)
 from datetime import timedelta
@@ -20,10 +29,7 @@ _LOGGER = logging.getLogger(__name__)
 
 SCAN_INTERVAL = timedelta(seconds=5)
 
-SUPPORT_FLAGS = SUPPORT_TARGET_TEMPERATURE | SUPPORT_OPERATION_MODE | \
-                SUPPORT_HOLD_MODE | SUPPORT_ON_OFF | SUPPORT_FAN_MODE
 
-SUPPORT_FLAGS_MACHINE = SUPPORT_OPERATION_MODE 
 
 ATTR_IS_ZONE_GRID_OPENED = 'is_zone_grid_opened'
 ATTR_IS_GRID_MOTOR_ACTIVE = 'is_grid_motor_active'
@@ -38,17 +44,17 @@ ATTR_PROPORTIONAL_APERTURE = 'get_proportional_aperture'
 ATTR_TACTO_CONNECTED = 'is_tacto_connected_cz'
 
 AVAILABLE_ATTRIBUTES_ZONE = {
-    # ATTR_IS_ZONE_GRID_OPENED: 'is_zone_grid_opened',
-    # ATTR_IS_GRID_MOTOR_ACTIVE: 'is_grid_motor_active',
-    # ATTR_IS_GRID_MOTOR_REQUESTED: 'is_grid_motor_requested',
+    ATTR_IS_ZONE_GRID_OPENED: 'is_zone_grid_opened',
+    ATTR_IS_GRID_MOTOR_ACTIVE: 'is_grid_motor_active',
+    ATTR_IS_GRID_MOTOR_REQUESTED: 'is_grid_motor_requested',
     ATTR_IS_FLOOR_ACTIVE: 'is_floor_active',
-    # ATTR_LOCAL_MODULE_FANCOIL: 'get_local_module_fancoil',
-    # ATTR_IS_REQUESTING_AIR: 'is_requesting_air',
-    # ATTR_IS_OCCUPIED: 'is_occupied',
-    # ATTR_IS_WINDOWS_OPENED: 'is_window_opened',
-    # ATTR_FANCOIL_SPEED: 'get_fancoil_speed',
-    # ATTR_PROPORTIONAL_APERTURE: 'get_proportional_aperture',
-    # ATTR_TACTO_CONNECTED: 'is_tacto_connected_cz',
+    ATTR_LOCAL_MODULE_FANCOIL: 'get_local_module_fancoil',
+    ATTR_IS_REQUESTING_AIR: 'is_requesting_air',
+    ATTR_IS_OCCUPIED: 'is_occupied',
+    ATTR_IS_WINDOWS_OPENED: 'is_window_opened',
+    ATTR_FANCOIL_SPEED: 'get_fancoil_speed',
+    ATTR_PROPORTIONAL_APERTURE: 'get_proportional_aperture',
+    ATTR_TACTO_CONNECTED: 'is_tacto_connected_cz',
 }
 
 
@@ -63,6 +69,13 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     devices = [InnobusMachine(gat._Machine)]+[InnobusZone(z) for z in gat.devices]
     _LOGGER.info("Airzone devices " + str(devices) + " " + str(len(devices)))
     add_entities(devices)
+
+ZONE_HVAC_MODES = [HVAC_MODE_AUTO, HVAC_HEAT_COOL, HVAC_MODE_OFF]
+PRESET_SLEEP = 'SLEEP'
+ZONE_PRESET_MODES = [PRESET_NONE, PRESET_SLEEP]
+ZONE_FAN_MODES = [FAN_AUTO, FAN_LOW, FAN_MEDIUM, FAN_HIGH]
+ZONE_SUPPORT_FLAGS = SUPPORT_TARGET_TEMPERATURE | SUPPORT_FAN_MODE | SUPPORT_PRESET_MODE
+
 
 class InnobusZone(ClimateDevice):
     """Representation of a Innobus Zone."""
@@ -95,17 +108,13 @@ class InnobusZone(ClimateDevice):
     @property
     def supported_features(self):
         """Return the list of supported features."""
-        return SUPPORT_FLAGS
+        return ZONE_SUPPORT_FLAGS
 
     @property
     def temperature_unit(self):
         """Return the unit of measurement that is used."""
         return TEMP_CELSIUS
 
-    @property
-    def is_on(self):
-        """Return true if the device is on."""
-        return bool(self._airzone_zone.is_tacto_on())
     
     def turn_on(self):
         """Turn on."""
@@ -115,29 +124,34 @@ class InnobusZone(ClimateDevice):
         """Turn off."""
         self._airzone_zone.turnoff_tacto()
 
+
     @property
-    def current_hold_mode(self):
-        """Return hold mode setting."""
-        return bool(self._airzone_zone.is_zone_hold())
-    
-    def set_hold_mode(self, hold_mode):
-        """Update hold_mode on."""
-        if hold_mode:
-            self._airzone_zone.turnon_hold() 
+    def hvac_mode(self) -> str:
+        """Return hvac operation ie. heat, cool mode.
+        Need to be one of HVAC_MODE_*.
+        """
+        tacto_on =  bool(self._airzone_zone.is_tacto_on())
+        if tacto_on:
+            return HVAC_MODE_AUTO
         else:
-            self._airzone_zone.turnoff_hold() 
+            return HVAC_MODE_OFF
 
     @property
-    def current_operation(self):
-        """Return current operation ie. heat, cool, idle."""
-        from airzone.protocol import ZoneMode
-        current_op = self._airzone_zone.get_zone_mode()
-        return current_op.name
+    def hvac_modes(self) -> List[str]:
+        """Return the list of available hvac operation modes.
+        Need to be a subset of HVAC_MODES.
+        """
+        return ZONE_HVAC_MODES
 
-    @property
-    def operation_list(self):
-        """Return the list of available operation modes."""
-        return self._operational_modes
+    def set_hvac_mode(self, hvac_mode: str) -> None:
+        """Set new target hvac mode."""
+        if hvac_mode == HVAC_OFF:
+            self._airzone_zone.turnoff_automatic_mode()
+            self._airzone_zone.turnoff_tacto()
+        elif hvac_mode == HVAC_MODE_HEAT_COOL:
+            self._airzone_zone.turnon_tacto()
+        elif hvac_mode == HVAC_MODE_AUTO:
+            self._airzone_zone.turnon_automatic_mode()
 
     @property
     def current_temperature(self):
@@ -156,11 +170,69 @@ class InnobusZone(ClimateDevice):
         print("Airzone temperature: " + str(temperature))
         self._airzone_zone.set_signal_temperature_value(round(float(temperature), 1))
 
-    def set_operation_mode(self, operation_mode):
-        """Set new target operation mode."""
-        self._airzone_zone.set_zone_mode(operation_mode)
-        return
+    @property
+    def preset_mode(self) -> Optional[str]:
+        """Return the current preset mode, e.g., home, away, temp.
+        Requires SUPPORT_PRESET_MODE.
+        """
+        if self._airzone_machine.is_sleep_on():
+            return PRESET_SLEEP
+        return PRESET_NONE
+
+    @property
+    def preset_modes(self) -> Optional[List[str]]:
+        """Return a list of available preset modes.
+        Requires SUPPORT_PRESET_MODE.
+        """
+        return ZONE_PRESET_MODES
+
+    def set_preset_mode(self, preset_mode: str) -> None:
+        """Set new preset mode."""
+        if preset_mode == PRESET_NONE:
+            self._airzone_zone.turnoff_sleep()
+        else:
+            self._airzone_zone.turnon_sleep()
         
+    @property
+    def fan_mode(self) -> Optional[str]:
+        """Return the fan setting.
+        Requires SUPPORT_FAN_MODE.
+        """
+        from airzone.protocol import FancoilSpeed
+        fan_mode = self._airzone_zone.get_speed_selection()
+        if fan_mode == FancoilSpeed.AUTOMATIC:
+            return FAN_AUTO
+        if fan_mode == FancoilSpeed.SPEED_1:
+            return FAN_LOW
+        if fan_mode == FancoilSpeed.SPEED_2:
+            return FAN_MEDIUM
+        if fan_mode == FancoilSpeed.SPEED_3:
+            return FAN_HIGH
+        return FAN_AUTO
+
+
+    @property
+    def fan_modes(self) -> Optional[List[str]]:
+        """Return the list of available fan modes.
+        Requires SUPPORT_FAN_MODE.
+        """
+        return ZONE_FAN_MODES
+    
+    def set_fan_mode(self, fan_mode: str) -> None:
+        """Set new target fan mode."""
+        
+        if fan_mode == FAN_AUTO:
+            self._airzone_zone.get_speed_selection('AUTOMATIC')
+            return
+        if fan_mode == FAN_LOW:
+            self._airzone_zone.get_speed_selection('SPEED_1')
+            return FAN_LOW
+        if fan_mode == FAN_MEDIUM:
+            self._airzone_zone.get_speed_selection('SPPED_2')
+            return FAN_MEDIUM
+        if fan_mode == FAN_HIGH:
+            self._airzone_zone.get_speed_selection('SPEED_3')
+                   
     @property
     def min_temp(self):
         return self._airzone_zone.get_min_signal_value()
@@ -169,35 +241,27 @@ class InnobusZone(ClimateDevice):
     def max_temp(self):
         return self._airzone_zone.get_max_signal_value()
     
-    @property
-    def current_fan_mode(self):
-        """Return the fan setting."""
-        from airzone.protocol import FancoilSpeed
-        return self._airzone_zone.get_speed_selection().name
-    
-    def set_fan_mode(self, fan_mode):
-        self._airzone_zone.set_speed_selection(fan_mode)
-
-    @property   
-    def fan_list(self):
-        return self._fan_list
-    
     async def async_update(self):
         self._airzone_zone.retrieve_zone_status()
-        self._state_attrs[ATTR_IS_FLOOR_ACTIVE] = self._airzone_zone.is_floor_active()
-        # self._state_attrs.update(
-        #         {key: self._extract_value_from_attribute(self._airzone_zone, value) for
-        #          key, value in self._available_attributes.items()})
+        #self._state_attrs[ATTR_IS_FLOOR_ACTIVE] = self._airzone_zone.is_floor_active()
+        self._state_attrs.update(
+                {key: self._extract_value_from_attribute(self._airzone_zone, value) for
+                 key, value in self._available_attributes.items()})
         _LOGGER.debug(str(self._airzone_zone))
 
     @staticmethod
     def _extract_value_from_attribute(state, attribute):
-        value = getattr(state, attribute)
+        func = getattr(state, attribute)
+        value = func()
         if isinstance(value, Enum):
             return value.value
-
         return value
 
+MACHINE_HVAC_MODES = [HVAC_MODE_FAN_ONLY, HVAC_HEAT, HVAC_MODE_COOL, HVAC_MODE_OFF]
+PRESET_AIR_MODE = 'AIRE'
+PRESET_RADIATOR_MODE = 'RADIADOR'
+MACHINE_PRESET_MODES = [PRESET_AIR_MODE, PRESET_RADIATOR_MODE], 
+MACHINE_SUPPORT_FLAGS = SUPPORT_AUX_HEAT | SUPPORT_PRESET_MODE
 class InnobusMachine(ClimateDevice):
     """Representation of a Innobus Zone."""
 
@@ -218,7 +282,7 @@ class InnobusMachine(ClimateDevice):
     @property
     def supported_features(self):
         """Return the list of supported features."""
-        return SUPPORT_FLAGS_MACHINE
+        return MACHINE_SUPPORT_FLAGS
 
     @property
     def temperature_unit(self):
@@ -226,20 +290,99 @@ class InnobusMachine(ClimateDevice):
         return TEMP_CELSIUS
 
     @property
-    def current_operation(self):
+    def hvac_mode(self) -> str:
+        """Return hvac operation ie. heat, cool mode.
+        Need to be one of HVAC_MODE_*.
+        """
         from airzone.protocol import MachineOperationMode
-        """Return current operation ie. heat, cool, idle."""
         current_op = self._airzone_machine.get_operation_mode()
-        return current_op.name
+        if current_op in [MachineOperationMode.HOT, MachineOperationMode.HOT_AIR, MachineOperationMode.HOTPLUS]:
+            return HVAC_MODE_HEAT
+        if current_op == MachineOperationMode.COLD:
+            return HVAC_MODE_COOL
+        if current_op == MachineOperationMode.AIR:
+            return HVAC_MODE_FAN_ONLY
+        return HVAC_MODE_OFF
+            
 
     @property
-    def operation_list(self):
-        """Return the list of available operation modes."""
-        return self._operational_modes
+    def hvac_modes(self) -> List[str]:
+        """Return the list of available hvac operation modes.
+        Need to be a subset of HVAC_MODES.
+        """
+        return MACHINE_HVAC_MODES
+    
+     def set_hvac_mode(self, hvac_mode: str) -> None:
+        """Set new target hvac mode."""
+        if hvac_mode == HVAC_MODE_OFF:
+            self._airzone_machine.set_operation_mode('STOP')
+            return
+        if hvac_mode == HVAC_MODE_COOL:
+            self._airzone_machine.set_operation_mode('COLD')
+            return
+        if hvac_mode == HVAC_MODE_FAN_ONLY:
+            self._airzone_machine.set_operation_mode('AIR')
+            return
+         if hvac_mode == HVAC_MODE_HEAT:
+            if self.is_aux_heat:
+                self._airzone_machine.set_operation_mode('HOTPLUS')
+                return
+            if self.preset_mode == PRESET_AIR_MODE:
+                self._airzone_machine.set_operation_mode('HOT_AIR')
+                return
+            if self.preset_mode == PRESET_RADIATOR_MODE:
+                self._airzone_machine.set_operation_mode('HOT')
+                return
+            
 
-    def set_operation_mode(self, operation_mode):
-        """Set new target operation mode."""
-        self._airzone_machine.set_operation_mode(operation_mode)
+    @property
+    def preset_mode(self) -> Optional[str]:
+        """Return the current preset mode, e.g., home, away, temp.
+        Requires SUPPORT_PRESET_MODE.
+        """
+        from airzone.protocol import MachineOperationMode
+        current_op = self._airzone_machine.get_operation_mode()
+        if current_op in [MachineOperationMode.HOT_AIR]
+            return PRESET_AIR_MODE
+        else
+            return PRESET_RADIATOR_MODE
+
+    @property
+    def preset_modes(self) -> Optional[List[str]]:
+        """Return a list of available preset modes.
+        Requires SUPPORT_PRESET_MODE.
+        """
+        return MACHINE_PRESET_MODES
+
+    def set_preset_mode(self, preset_mode: str) -> None:
+        """Set new preset mode."""
+        if self.hvac_mode == HVAC_MODE_HEAT:
+
+            if preset_mode == PRESET_RADIATOR_MODE:
+                self._airzone_machine.set_operation_mode('HOT')
+                return
+            if preset_mode == PRESET_AIR_MODE:
+                self._airzone_machine.set_operation_mode('HOT_AIR')
+                return
+
+    def turn_aux_heat_on(self) -> None:
+        """Turn auxiliary heater on."""
+        self._airzone_machine.set_operation_mode('HOTPLUS')
+    
+    def turn_aux_heat_off(self) -> None:
+        """Turn auxiliary heater on."""
+        if self.preset_mode == PRESET_AIR_MODE:
+            self._airzone_machine.set_operation_mode('AIR')
+        elif self.preset_mode == PRESET_RADIATOR_MODE:
+            self._airzone_machine.set_operation_mode('HOT')
+    
+    @property
+    def is_aux_heat(self) -> Optional[bool]:
+        """Return true if aux heater.
+        Requires SUPPORT_AUX_HEAT.
+        """
+        from airzone.protocol import MachineOperationMode
+        return self._airzone_machine.get_operation_mode() == MachineOperationMode.HOTPLUS
     
     def update(self):
         self._airzone_machine.retrieve_machine_status(False)
