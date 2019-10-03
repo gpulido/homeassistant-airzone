@@ -185,7 +185,6 @@ class InnobusZone(ClimateDevice):
         temperature = kwargs.get(ATTR_TEMPERATURE)
         if temperature is None:
             return None
-        print("Airzone temperature: " + str(temperature))
         self._airzone_zone.set_signal_temperature_value(round(float(temperature), 1))
 
     @property
