@@ -49,6 +49,7 @@ ATTR_PROPORTIONAL_APERTURE = 'get_proportional_aperture'
 ATTR_TACTO_CONNECTED = 'is_tacto_connected_cz'
 ATTR_IS_AUTOMATIC_MODE = 'is_automatic_mode'
 ATTR_IS_TACTO_ON = 'is_tacto_on'
+ATTR_DIF_CURRENT_TEMP = 'get_dif_current_temp'
 
 AVAILABLE_ATTRIBUTES_ZONE = {
     ATTR_IS_ZONE_GRID_OPENED: 'is_zone_grid_opened',
@@ -63,7 +64,8 @@ AVAILABLE_ATTRIBUTES_ZONE = {
     ATTR_PROPORTIONAL_APERTURE: 'get_proportional_aperture',
     ATTR_TACTO_CONNECTED: 'is_tacto_connected_cz',
     ATTR_IS_AUTOMATIC_MODE: 'is_automatic_mode',
-    ATTR_IS_TACTO_ON: 'is_tacto_on'
+    ATTR_IS_TACTO_ON: 'is_tacto_on',
+    ATTR_DIF_CURRENT_TEMP: 'get_dif_current_temp'
 }
 
 
@@ -245,7 +247,7 @@ class InnobusZone(ClimateDevice):
             self._airzone_zone.get_speed_selection('SPEED_1')
             return FAN_LOW
         if fan_mode == FAN_MEDIUM:
-            self._airzone_zone.get_speed_selection('SPPED_2')
+            self._airzone_zone.get_speed_selection('SPEED_2')
             return FAN_MEDIUM
         if fan_mode == FAN_HIGH:
             self._airzone_zone.get_speed_selection('SPEED_3')
@@ -279,7 +281,7 @@ PRESET_FLOOR_MODE = 'FLOOR'
 MACHINE_PRESET_MODES = [PRESET_AIR_MODE, PRESET_FLOOR_MODE] 
 MACHINE_SUPPORT_FLAGS = SUPPORT_AUX_HEAT | SUPPORT_PRESET_MODE
 class InnobusMachine(ClimateDevice):
-    """Representation of a Innobus Zone."""
+    """Representation of a Innobus Machine."""
 
     def __init__(self, airzone_machine):
         """Initialize the device."""

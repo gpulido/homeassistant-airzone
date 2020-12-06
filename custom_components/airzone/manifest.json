@@ -3,6 +3,10 @@
   "name": "AirZone",
   "documentation": "https://home-assistant.io/components/airzone/",
   "dependencies": [],
-  "codeowners": ["@gpulido"],
-  "requirements": ["python-airzone==0.1.0"]
+  "codeowners": [
+    "@gpulido"
+  ],
+  "requirements": [
+    "python-airzone==0.2.0"
+  ]
 }
