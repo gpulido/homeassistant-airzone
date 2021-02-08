@@ -3,7 +3,7 @@ Support for Airzone thermostats
 """
 from typing import Any, Dict, List, Optional
 import logging
-from homeassistant.components.climate import ClimateDevice
+from homeassistant.components.climate import ClimateEntity
 
 from homeassistant.components.climate.const import (
     SUPPORT_TARGET_TEMPERATURE,
@@ -21,7 +21,11 @@ from homeassistant.components.climate.const import (
     FAN_AUTO,
     FAN_LOW,
     FAN_MEDIUM,
-    FAN_HIGH
+    FAN_HIGH,
+    CURRENT_HVAC_HEAT,
+    CURRENT_HVAC_COOL,
+    CURRENT_HVAC_IDLE,
+    CURRENT_HVAC_OFF
 )
 
 from homeassistant.const import (CONF_HOST, CONF_PORT, ATTR_TEMPERATURE, TEMP_CELSIUS)
@@ -88,7 +92,7 @@ ZONE_FAN_MODES = [FAN_AUTO, FAN_LOW, FAN_MEDIUM, FAN_HIGH]
 ZONE_SUPPORT_FLAGS = SUPPORT_TARGET_TEMPERATURE | SUPPORT_FAN_MODE | SUPPORT_PRESET_MODE
 
 
-class InnobusZone(ClimateDevice):
+class InnobusZone(ClimateEntity):
     """Representation of a Innobus Zone."""
 
     def __init__(self, airzone_zone):
@@ -171,6 +175,24 @@ class InnobusZone(ClimateDevice):
             self._airzone_zone.turnon_automatic_mode()
             self._airzone_zone.retrieve_zone_status()
             self._airzone_zone.turnon_tacto()
+    
+    @property
+    def hvac_action(self) -> Optional[str]:
+        """Return the current running hvac operation."""
+        from airzone.protocol import MachineOperationMode
+        op_mode = self._airzone_zone._machine.get_operation_mode()
+
+        if self._airzone_zone.is_floor_active():
+            return CURRENT_HVAC_HEAT
+
+        if self._airzone_zone.is_requesting_air():
+            if op_mode == MachineOperationMode.HOT_AIR:
+                return CURRENT_HVAC_HEAT
+            return CURRENT_HVAC_COOL
+        
+        if op_mode == MachineOperationMode.STOP:
+            return CURRENT_HVAC_OFF
+        return CURRENT_HVAC_IDLE
             
 
     @property
@@ -280,7 +302,7 @@ PRESET_AIR_MODE = 'AIRE'
 PRESET_FLOOR_MODE = 'FLOOR'
 MACHINE_PRESET_MODES = [PRESET_AIR_MODE, PRESET_FLOOR_MODE] 
 MACHINE_SUPPORT_FLAGS = SUPPORT_AUX_HEAT | SUPPORT_PRESET_MODE
-class InnobusMachine(ClimateDevice):
+class InnobusMachine(ClimateEntity):
     """Representation of a Innobus Machine."""
 
     def __init__(self, airzone_machine):
