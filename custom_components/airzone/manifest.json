@@ -1,12 +1,13 @@
 {
   "domain": "airzone",
   "name": "AirZone",
+  "version": "1.0.0",
   "documentation": "https://home-assistant.io/components/airzone/",
   "dependencies": [],
   "codeowners": [
     "@gpulido"
   ],
   "requirements": [
-    "python-airzone==0.4.0"
+    "python-airzone==0.4.1"
   ]
 }
