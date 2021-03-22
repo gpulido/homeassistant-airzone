@@ -38,8 +38,6 @@ _LOGGER = logging.getLogger(__name__)
 
 SCAN_INTERVAL = timedelta(seconds=5)
 
-
-
 ATTR_IS_ZONE_GRID_OPENED = 'is_zone_grid_opened'
 ATTR_IS_GRID_MOTOR_ACTIVE = 'is_grid_motor_active'
 ATTR_IS_GRID_MOTOR_REQUESTED = 'is_grid_motor_requested'
@@ -79,9 +77,11 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     host = config.get(CONF_HOST)
     if port is None or host is None:
         return
-    from airzone import Gateway
-    gat = Gateway(host, port, 1)
-    devices = [InnobusMachine(gat._Machine)]+[InnobusZone(z) for z in gat.devices]
+    from airzone.protocol import Gateway
+    gat = Gateway(host, port)
+    from airzone.innobus import Machine
+    machine = Machine(gat, 1)
+    devices = [InnobusMachine(machine)]+[InnobusZone(z) for z in machine.get_zones()]
     _LOGGER.info("Airzone devices " + str(devices) + " " + str(len(devices)))
     add_entities(devices)
 
