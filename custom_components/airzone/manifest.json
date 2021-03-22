@@ -8,6 +8,6 @@
     "@gpulido"
   ],
   "requirements": [
-    "python-airzone==0.4.2"
+    "python-airzone==0.4.3"
   ]
 }
