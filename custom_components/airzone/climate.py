@@ -1,3 +1,4 @@
+from homeassistant import config_entries, core
 from homeassistant.components.climate import ClimateEntity
 from homeassistant.components.climate.const import (
     CURRENT_HVAC_COOL,
@@ -27,7 +28,9 @@ from homeassistant.const import (
     CONF_DEVICE_ID,
     CONF_HOST,
     CONF_NAME,
+    CONF_PATH,
     CONF_PORT,
+    DOMAIN,
 )
 from homeassistant.helpers.typing import (
     ConfigType,
@@ -51,6 +54,25 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 
     }
 )
+
+async def async_setup_entry(
+    hass: core.HomeAssistant,
+    config_entry: config_entries.ConfigEntry,
+    async_add_entities,
+):
+    """Setup sensors from a config entry created in the integrations UI."""
+    config = hass.data[DOMAIN][config_entry.entry_id]
+    # Update our config to include new repos and remove those that have been removed.
+    port = config[CONF_PORT]
+    host = config[CONF_HOST]
+    machine_id = config[CONF_DEVICE_ID]
+    system_class = config[CONF_DEVICE_CLASS]
+    
+    from airzone import airzone_factory
+    machine = airzone_factory(host, port, machine_id, system_class)
+    devices = [InnobusMachine(machine)]+[InnobusZone(z) for z in machine.get_zones()]
+    
+    async_add_entities(devices, update_before_add=True)
 
 def setup_platform(
     hass: HomeAssistantType,
