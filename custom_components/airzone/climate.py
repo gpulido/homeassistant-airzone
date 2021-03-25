@@ -1,5 +1,9 @@
+from enum import Enum
+import logging
+from typing import Any, Callable, Dict, List, Optional
+
 from homeassistant import config_entries, core
-from homeassistant.components.climate import ClimateEntity
+from homeassistant.components.climate import PLATFORM_SCHEMA, ClimateEntity
 from homeassistant.components.climate.const import (
     CURRENT_HVAC_COOL,
     CURRENT_HVAC_HEAT,
@@ -30,8 +34,9 @@ from homeassistant.const import (
     CONF_NAME,
     CONF_PATH,
     CONF_PORT,
-    DOMAIN,
+    TEMP_CELSIUS,
 )
+import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.typing import (
     ConfigType,
     DiscoveryInfoType,
@@ -41,6 +46,8 @@ import voluptuous as vol
 
 from .const import *
 
+_LOGGER = logging.getLogger(__name__)
+
 REPO_SCHEMA = vol.Schema(
     {vol.Required(CONF_PATH): cv.string, vol.Optional(CONF_NAME): cv.string}
 )
@@ -49,8 +56,8 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
         vol.Required(CONF_HOST): cv.string,
         vol.Required(CONF_PORT): cv.port,
-        vol.Optional(CON_DEVICE_ID, default=DEFAULT_DEVICE_ID): cv.int,
-        vol.Optional(CON_DEVICE_CLASS, default=DEFAULT_DEVICE_CLASS): vol.In(["innobus", "aido"])
+        vol.Optional(CONF_DEVICE_ID, default=DEFAULT_DEVICE_ID): int,
+        vol.Optional(CONF_DEVICE_CLASS, default=DEFAULT_DEVICE_CLASS): vol.In(["innobus", "aido"])
 
     }
 )
@@ -67,11 +74,11 @@ async def async_setup_entry(
     host = config[CONF_HOST]
     machine_id = config[CONF_DEVICE_ID]
     system_class = config[CONF_DEVICE_CLASS]
-    
+
     from airzone import airzone_factory
     machine = airzone_factory(host, port, machine_id, system_class)
     devices = [InnobusMachine(machine)]+[InnobusZone(z) for z in machine.get_zones()]
-    
+
     async_add_entities(devices, update_before_add=True)
 
 def setup_platform(
@@ -85,7 +92,7 @@ def setup_platform(
     host = config.get(CONF_HOST)
     machine_id = config.get(CONF_DEVICE_ID)
     system_class = config.get(CONF_DEVICE_CLASS)
-    
+
     from airzone import airzone_factory
     machine = airzone_factory(host, port, machine_id, system_class)
     devices = [InnobusMachine(machine)]+[InnobusZone(z) for z in machine.get_zones()]
@@ -108,16 +115,16 @@ class InnobusZone(ClimateEntity):
         self._name = "Airzone Zone "  + str(airzone_zone.zoneId)
         _LOGGER.info("Airzone configure zone " + self._name)
         self._airzone_zone = airzone_zone
-        from airzone.protocol import ZoneMode
+        from airzone.innobus import ZoneMode
         self._operational_modes = [e.name for e in ZoneMode]
-        from airzone.protocol import FancoilSpeed
+        from airzone.innobus import FancoilSpeed
         self._fan_list = [e.name for e in FancoilSpeed]
 
-        self._available_attributes = const.AVAILABLE_ATTRIBUTES_ZONE
+        self._available_attributes = AVAILABLE_ATTRIBUTES_ZONE
         self._state_attrs = {}
         self._state_attrs.update(
             {attribute: None for attribute in self._available_attributes})
-    
+
     @property
     def device_state_attributes(self):
         """Return the state attributes."""
@@ -138,7 +145,7 @@ class InnobusZone(ClimateEntity):
         """Return the unit of measurement that is used."""
         return TEMP_CELSIUS
 
-    
+
     def turn_on(self):
         """Turn on."""
         self._airzone_zone.turnon_tacto()
@@ -177,16 +184,16 @@ class InnobusZone(ClimateEntity):
             self._airzone_zone.turnoff_automatic_mode()
             self._airzone_zone.retrieve_zone_status()
             self._airzone_zone.turnon_tacto()
-           
+
         elif hvac_mode == HVAC_MODE_AUTO:
             self._airzone_zone.turnon_automatic_mode()
             self._airzone_zone.retrieve_zone_status()
             self._airzone_zone.turnon_tacto()
-    
+
     @property
     def hvac_action(self) -> Optional[str]:
         """Return the current running hvac operation."""
-        from airzone.protocol import MachineOperationMode
+        from airzone.innobus import MachineOperationMode
         op_mode = self._airzone_zone._machine.get_operation_mode()
 
         if self._airzone_zone.is_floor_active():
@@ -196,11 +203,11 @@ class InnobusZone(ClimateEntity):
             if op_mode == MachineOperationMode.HOT_AIR:
                 return CURRENT_HVAC_HEAT
             return CURRENT_HVAC_COOL
-        
+
         if op_mode == MachineOperationMode.STOP:
             return CURRENT_HVAC_OFF
         return CURRENT_HVAC_IDLE
-            
+
 
     @property
     def current_temperature(self):
@@ -240,13 +247,13 @@ class InnobusZone(ClimateEntity):
             self._airzone_zone.turnoff_sleep()
         else:
             self._airzone_zone.turnon_sleep()
-        
+
     @property
     def fan_mode(self) -> Optional[str]:
         """Return the fan setting.
         Requires SUPPORT_FAN_MODE.
         """
-        from airzone.protocol import FancoilSpeed
+        from airzone.innobus import FancoilSpeed
         fan_mode = self._airzone_zone.get_speed_selection()
         if fan_mode == FancoilSpeed.AUTOMATIC:
             return FAN_AUTO
@@ -265,10 +272,10 @@ class InnobusZone(ClimateEntity):
         Requires SUPPORT_FAN_MODE.
         """
         return ZONE_FAN_MODES
-    
+
     def set_fan_mode(self, fan_mode: str) -> None:
         """Set new target fan mode."""
-        
+
         if fan_mode == FAN_AUTO:
             self._airzone_zone.set_speed_selection('AUTOMATIC')
             return
@@ -280,7 +287,7 @@ class InnobusZone(ClimateEntity):
             return FAN_MEDIUM
         if fan_mode == FAN_HIGH:
             self._airzone_zone.set_speed_selection('SPEED_3')
-                   
+
     @property
     def min_temp(self):
         return self._airzone_zone.get_min_signal_value()
@@ -288,7 +295,7 @@ class InnobusZone(ClimateEntity):
     @property
     def max_temp(self):
         return self._airzone_zone.get_max_signal_value()
-    
+
     def update(self):
         self._airzone_zone.retrieve_zone_status()
         self._state_attrs.update(
@@ -307,7 +314,7 @@ class InnobusZone(ClimateEntity):
 MACHINE_HVAC_MODES = [HVAC_MODE_FAN_ONLY, HVAC_MODE_HEAT, HVAC_MODE_COOL, HVAC_MODE_OFF]
 PRESET_AIR_MODE = 'AIRE'
 PRESET_FLOOR_MODE = 'FLOOR'
-MACHINE_PRESET_MODES = [PRESET_AIR_MODE, PRESET_FLOOR_MODE] 
+MACHINE_PRESET_MODES = [PRESET_AIR_MODE, PRESET_FLOOR_MODE]
 MACHINE_SUPPORT_FLAGS = SUPPORT_AUX_HEAT | SUPPORT_PRESET_MODE
 
 class InnobusMachine(ClimateEntity):
@@ -350,7 +357,7 @@ class InnobusMachine(ClimateEntity):
         if current_op == MachineOperationMode.AIR:
             return HVAC_MODE_FAN_ONLY
         return HVAC_MODE_OFF
-            
+
 
     @property
     def hvac_modes(self) -> List[str]:
@@ -358,7 +365,7 @@ class InnobusMachine(ClimateEntity):
         Need to be a subset of HVAC_MODES.
         """
         return MACHINE_HVAC_MODES
-    
+
     def set_hvac_mode(self, hvac_mode: str) -> None:
         """Set new target hvac mode."""
         if hvac_mode == HVAC_MODE_OFF:
@@ -380,7 +387,7 @@ class InnobusMachine(ClimateEntity):
             if self.preset_mode == PRESET_FLOOR_MODE:
                 self._airzone_machine.set_operation_mode('HOT')
                 return
-            
+
 
     @property
     def preset_mode(self) -> Optional[str]:
@@ -415,14 +422,14 @@ class InnobusMachine(ClimateEntity):
     def turn_aux_heat_on(self) -> None:
         """Turn auxiliary heater on."""
         self._airzone_machine.set_operation_mode('HOTPLUS')
-    
+
     def turn_aux_heat_off(self) -> None:
         """Turn auxiliary heater on."""
         if self.preset_mode == PRESET_AIR_MODE:
             self._airzone_machine.set_operation_mode('AIR')
         elif self.preset_mode == PRESET_FLOOR_MODE:
             self._airzone_machine.set_operation_mode('HOT')
-    
+
     @property
     def is_aux_heat(self) -> Optional[bool]:
         """Return true if aux heater.
@@ -430,7 +437,7 @@ class InnobusMachine(ClimateEntity):
         """
         from airzone.innobus import MachineOperationMode
         return self._airzone_machine.get_operation_mode() == MachineOperationMode.HOTPLUS
-    
+
     def update(self):
         self._airzone_machine.retrieve_machine_status(False)
         _LOGGER.debug(str(self._airzone_machine))

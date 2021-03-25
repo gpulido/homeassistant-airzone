@@ -1,0 +1,19 @@
+{
+    "config": {
+        "error": {
+            "connection": "Cannot connect with airzone TCP modbus"
+          },
+        "step": {
+            "user": {
+                "data": {
+                    "host": "The ip / host where the system is listening",
+                    "port": "port",
+                    "device_id": "Device Id",
+                    "device_class": "Class"
+                },
+                "description": "Enter your Airzone config.",
+                "title": "Configuration"
+            }
+        }
+    }
+}

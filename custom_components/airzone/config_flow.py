@@ -1,4 +1,5 @@
 import logging
+from typing import Any, Dict, Optional
 
 from homeassistant import config_entries, core
 from homeassistant.const import CONF_DEVICE_CLASS, CONF_DEVICE_ID, CONF_HOST, CONF_PORT
@@ -10,16 +11,16 @@ from homeassistant.helpers.entity_registry import (
 )
 import voluptuous as vol
 
-from .const import DOMAIN
+from .const import DEFAULT_DEVICE_CLASS, DEFAULT_DEVICE_ID, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
 AIRZONE_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_HOST): cv.string,
-        vol.Required(CONF_PORT): cv.port,
-        vol.Optional(CON_DEVICE_ID, default=DEFAULT_DEVICE_ID): cv.int,
-        vol.Optional(CON_DEVICE_CLASS, default=DEFAULT_DEVICE_CLASS): vol.In(["innobus", "aido"])
+        vol.Required(CONF_PORT, default=7000): vol.Coerce(int),
+        vol.Optional(CONF_DEVICE_ID, default=DEFAULT_DEVICE_ID): int,
+        vol.Optional(CONF_DEVICE_CLASS, default=DEFAULT_DEVICE_CLASS): vol.In(["innobus", "aido"])
     }
 )
 
@@ -32,9 +33,20 @@ class AirzoneConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Invoked when a user initiates a flow via the user interface."""
         errors: Dict[str, str] = {}
         if user_input is not None:
-            self.data = user_input
-            # Return the form of the next step.
-            return self.async_create_entry(title="Airzone", data=self.data)
+
+            from airzone import airzone_factory
+            port = user_input[CONF_PORT]
+            host = user_input[CONF_HOST]
+            machine_id = user_input[CONF_DEVICE_ID]
+            system_class = user_input[CONF_DEVICE_CLASS]
+            try:
+                machine = airzone_factory(host, port, machine_id, system_class)
+            except:
+                errors["base"] = "connection"
+            if not errors:
+                self.data = user_input
+
+                return self.async_create_entry(title="Airzone", data=self.data)
 
         return self.async_show_form(
             step_id="user", data_schema=AIRZONE_SCHEMA, errors=errors
