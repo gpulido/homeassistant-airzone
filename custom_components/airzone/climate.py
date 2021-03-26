@@ -28,6 +28,7 @@ from homeassistant.components.climate.const import (
 )
 from homeassistant.const import (
     ATTR_NAME,
+    ATTR_TEMPERATURE,
     CONF_DEVICE_CLASS,
     CONF_DEVICE_ID,
     CONF_HOST,
@@ -295,6 +296,11 @@ class InnobusZone(ClimateEntity):
     @property
     def max_temp(self):
         return self._airzone_zone.get_max_signal_value()
+    
+    @property
+    def unique_id(self):
+        return self._airzone_zone.unique_id()
+
 
     def update(self):
         self._airzone_zone.retrieve_zone_status()
@@ -437,6 +443,11 @@ class InnobusMachine(ClimateEntity):
         """
         from airzone.innobus import MachineOperationMode
         return self._airzone_machine.get_operation_mode() == MachineOperationMode.HOTPLUS
+
+    @property
+    def unique_id(self):
+        return self._airzone_machine.unique_id()
+
 
     def update(self):
         self._airzone_machine.retrieve_machine_status(False)
