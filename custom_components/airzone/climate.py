@@ -15,6 +15,7 @@ from homeassistant.components.climate.const import (
     FAN_MEDIUM,
     HVAC_MODE_AUTO,
     HVAC_MODE_COOL,
+    HVAC_MODE_DRY,
     HVAC_MODE_FAN_ONLY,
     HVAC_MODE_HEAT,
     HVAC_MODE_HEAT_COOL,
@@ -78,8 +79,10 @@ async def async_setup_entry(
 
     from airzone import airzone_factory
     machine = airzone_factory(host, port, machine_id, system_class)
-    devices = [InnobusMachine(machine)]+[InnobusZone(z) for z in machine.get_zones()]
-
+    if system_class == 'innobus':
+        devices = [InnobusMachine(machine)]+[InnobusZone(z) for z in machine.get_zones()]
+    else:
+        devices = [Aido(machine)]
     async_add_entities(devices, update_before_add=True)
 
 def setup_platform(
@@ -88,7 +91,7 @@ def setup_platform(
     add_entities: Callable,
     discovery_info: Optional[DiscoveryInfoType] = None,
 ) -> None:
-    """Set up the Airzone thermostat platform."""
+    """Set up the Airzone climate platform."""
     port = config.get(CONF_PORT)
     host = config.get(CONF_HOST)
     machine_id = config.get(CONF_DEVICE_ID)
@@ -96,7 +99,10 @@ def setup_platform(
 
     from airzone import airzone_factory
     machine = airzone_factory(host, port, machine_id, system_class)
-    devices = [InnobusMachine(machine)]+[InnobusZone(z) for z in machine.get_zones()]
+    if system_class == 'innobus':
+        devices = [InnobusMachine(machine)]+[InnobusZone(z) for z in machine.get_zones()]
+    else:
+        devices = [Aido(machine)]
     _LOGGER.info("Airzone devices " + str(devices) + " " + str(len(devices)))
     add_entities(devices)
 
@@ -451,4 +457,155 @@ class InnobusMachine(ClimateEntity):
 
     def update(self):
         self._airzone_machine.retrieve_machine_status(False)
+        _LOGGER.debug(str(self._airzone_machine))
+
+
+AIDO_HVAC_MODES = [HVAC_MODE_FAN_ONLY, HVAC_MODE_HEAT, HVAC_MODE_COOL, HVAC_MODE_OFF, HVAC_MODE_DRY]
+AIDO_FAN_MODES = [FAN_AUTO, "1", "2", "3", "4", "5", "6", "7"]
+AIDO_SUPPORT_FLAGS = SUPPORT_TARGET_TEMPERATURE | SUPPORT_FAN_MODE
+
+class Aido(ClimateEntity):
+    """Representation of a Innobus Machine."""
+
+    def __init__(self, _airzone_aido):
+        """Initialize the device."""
+        self._name = "Aido "  + str(airzone_machine._machineId)
+        _LOGGER.info("Airzone configure machine " + self._name)
+        self._airzone_aido = airzone_machine
+        from airzone.aido import OperationMode
+        self._operational_modes = [e.name for e in OperationMode]
+
+    @property
+    def name(self):
+        """Return the name of the sensor."""
+        return self._name
+
+    @property
+    def supported_features(self):
+        """Return the list of supported features."""
+        return AIDO_SUPPORT_FLAGS
+
+    @property
+    def temperature_unit(self):
+        """Return the unit of measurement that is used."""
+        return TEMP_CELSIUS
+
+    def turn_on(self):
+        """Turn on."""
+        self._airzone_aido.turnon_tacto()
+
+    def turn_off(self):
+        """Turn off."""
+        self._airzone_aido.turnoff_tacto()
+
+    @property
+    def hvac_mode(self) -> str:
+        """Return hvac operation ie. heat, cool mode.
+        Need to be one of HVAC_MODE_*.
+        """
+        from airzone.aido import OperationMode
+        if not self._airzone_aido.get_is_machine_on():
+            return HVAC_MODE_OFF
+
+        current_op = self._airzone_aido.get_operation_mode()
+        if current_op == OperationMode.AUTO:
+            return HVAC_MODE_AUTO
+        if current_op == OperationMode.COOLING:
+            return HVAC_MODE_COOL
+        if current_op == OperationMode.HEATING:
+            return HVAC_MODE_HEAT
+        if current_op == OperationMode.FAN:
+            return HVAC_MODE_FAN_ONLY
+        return HVAC_MODE_DRY
+
+
+    @property
+    def hvac_modes(self) -> List[str]:
+        """Return the list of available hvac operation modes.
+        Need to be a subset of HVAC_MODES.
+        """
+        return MACHINE_HVAC_MODES
+
+    def set_hvac_mode(self, hvac_mode: str) -> None:
+        """Set new target hvac mode."""
+        if hvac_mode == HVAC_MODE_OFF:
+            self._airzone_aido.turn_off()
+            return
+        #TODO: review if this could be problematic
+        self._airzone_aido.turn_on()
+        if hvac_mode == HVAC_MODE_COOL:
+            self._airzone_aido.set_operation_mode('COOLING')
+            return
+        if hvac_mode == HVAC_MODE_AUTO:
+            self._airzone_aido.set_operation_mode('AUTO')
+            return
+        if hvac_mode == HVAC_MODE_HEAT:
+            self._airzone_aido.set_operation_mode('HEATING')
+            return
+        if hvac_mode == HVAC_MODE_FAN_ONLY:
+            self._airzone_aido.set_operation_mode('FAN')
+            return
+        if hvac_mode == HVAC_MODE_DRY:
+            self._airzone_aido.set_operation_mode('DRY')
+            return
+    
+    @property
+    def current_temperature(self):
+        """Return the current temperature."""
+        return self._airzone_aido.get_local_temperature()
+
+    @property
+    def target_temperature(self):
+        return self._airzone_aido.get_signal_temperature_value()
+
+    def set_temperature(self, **kwargs):
+        """Set new target temperature."""
+        temperature = kwargs.get(ATTR_TEMPERATURE)
+        if temperature is None:
+            return None
+        self._airzone_aido.set_signal_temperature_value(round(float(temperature), 1))
+
+    @property
+    def fan_mode(self) -> Optional[str]:
+        """Return the fan setting.
+        Requires SUPPORT_FAN_MODE.
+        """
+        from airzone.aido import Speed
+        fan_mode = self._airzone_aido.get_speed()
+        if fan_mode == Speed.AUTO:
+            return FAN_AUTO
+        return str(fan_mode)
+    
+    def set_fan_mode(self, fan_mode: str) -> None:
+        """Set new target fan mode."""
+
+        if fan_mode == FAN_AUTO:
+            self._airzone_aido.set_speed('AUTO')
+            return
+        self._airzone_aido.set_speed(f'SPEED_{fan_mode}')
+
+    @property
+    def fan_modes(self) -> Optional[List[str]]:
+        """Return the list of available fan modes.
+        Requires SUPPORT_FAN_MODE.
+        """
+        return AIDO_FAN_MODES
+    
+    @property
+    def min_temp(self):
+        #TODO: allow to parametrice
+        return 17
+
+    @property
+    def max_temp(self):
+        #TODO: allow to parametrice
+        return 35
+
+    @property
+    def unique_id(self):
+        return self._airzone_aido.unique_id()
+
+
+    def update(self):
+        self._airzone_aido._retrieve_machine_state(False)
         _LOGGER.debug(str(self._airzone_machine))
