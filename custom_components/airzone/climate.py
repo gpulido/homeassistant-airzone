@@ -467,11 +467,11 @@ AIDO_SUPPORT_FLAGS = SUPPORT_TARGET_TEMPERATURE | SUPPORT_FAN_MODE
 class Aido(ClimateEntity):
     """Representation of a Innobus Machine."""
 
-    def __init__(self, _airzone_aido):
+    def __init__(self, airzone_aido):
         """Initialize the device."""
-        self._name = "Aido "  + str(airzone_machine._machineId)
+        self._name = "Aido "  + str(airzone_aido._machineId)
         _LOGGER.info("Airzone configure machine " + self._name)
-        self._airzone_aido = airzone_machine
+        self._airzone_aido = airzone_aido
         from airzone.aido import OperationMode
         self._operational_modes = [e.name for e in OperationMode]
 
@@ -607,5 +607,5 @@ class Aido(ClimateEntity):
 
 
     def update(self):
-        self._airzone_aido._retrieve_machine_state(False)
-        _LOGGER.debug(str(self._airzone_machine))
+        self._airzone_aido._retrieve_machine_state()
+        _LOGGER.debug(str(self._airzone_aido))
