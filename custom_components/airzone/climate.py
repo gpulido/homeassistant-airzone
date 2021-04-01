@@ -524,7 +524,7 @@ class Aido(ClimateEntity):
         """Return the list of available hvac operation modes.
         Need to be a subset of HVAC_MODES.
         """
-        return MACHINE_HVAC_MODES
+        return AIDO_HVAC_MODES
 
     def set_hvac_mode(self, hvac_mode: str) -> None:
         """Set new target hvac mode."""
