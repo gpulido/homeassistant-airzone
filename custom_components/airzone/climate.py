@@ -460,7 +460,7 @@ class InnobusMachine(ClimateEntity):
         _LOGGER.debug(str(self._airzone_machine))
 
 
-AIDO_HVAC_MODES = [HVAC_MODE_FAN_ONLY, HVAC_MODE_HEAT, HVAC_MODE_COOL, HVAC_MODE_OFF, HVAC_MODE_DRY]
+AIDO_HVAC_MODES = [HVAC_MODE_AUTO, HVAC_MODE_FAN_ONLY, HVAC_MODE_HEAT, HVAC_MODE_COOL, HVAC_MODE_OFF, HVAC_MODE_DRY]
 AIDO_FAN_MODES = [FAN_AUTO, "1", "2", "3", "4", "5", "6", "7"]
 AIDO_SUPPORT_FLAGS = SUPPORT_TARGET_TEMPERATURE | SUPPORT_FAN_MODE
 
@@ -531,8 +531,9 @@ class Aido(ClimateEntity):
         if hvac_mode == HVAC_MODE_OFF:
             self._airzone_aido.turn_off()
             return
-        #TODO: review if this could be problematic
-        self._airzone_aido.turn_on()
+        
+        if not self._airzone_aido.get_is_machine_on():
+            self._airzone_aido.turn_on()
         if hvac_mode == HVAC_MODE_COOL:
             self._airzone_aido.set_operation_mode('COOLING')
             return
