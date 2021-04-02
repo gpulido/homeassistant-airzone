@@ -1,9 +1,12 @@
 """Airzone Custom Component."""
+from datetime import timedelta
 import logging
 
 from homeassistant import config_entries, core
 
 from .const import DOMAIN
+
+SCAN_INTERVAL = timedelta(seconds=10)
 
 _LOGGER = logging.getLogger(__name__)
 
