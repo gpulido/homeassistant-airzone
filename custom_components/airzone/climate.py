@@ -2,6 +2,7 @@ from enum import Enum
 import logging
 from typing import Any, Callable, Dict, List, Optional
 
+from airzone import airzone_factory
 from homeassistant import config_entries, core
 from homeassistant.components.climate import PLATFORM_SCHEMA, ClimateEntity
 from homeassistant.components.climate.const import (
@@ -76,8 +77,7 @@ async def async_setup_entry(
     host = config[CONF_HOST]
     machine_id = config[CONF_DEVICE_ID]
     system_class = config[CONF_DEVICE_CLASS]
-
-    from airzone import airzone_factory
+    
     machine = airzone_factory(host, port, machine_id, system_class)
     if system_class == 'innobus':
         devices = [InnobusMachine(machine)]+[InnobusZone(z) for z in machine.get_zones()]
@@ -96,8 +96,7 @@ def setup_platform(
     host = config.get(CONF_HOST)
     machine_id = config.get(CONF_DEVICE_ID)
     system_class = config.get(CONF_DEVICE_CLASS)
-
-    from airzone import airzone_factory
+    
     machine = airzone_factory(host, port, machine_id, system_class)
     if system_class == 'innobus':
         devices = [InnobusMachine(machine)]+[InnobusZone(z) for z in machine.get_zones()]
