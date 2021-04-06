@@ -1,3 +1,4 @@
+from datetime import timedelta
 from enum import Enum
 import logging
 from typing import Any, Callable, Dict, List, Optional
@@ -11,9 +12,6 @@ from homeassistant.components.climate.const import (
     CURRENT_HVAC_IDLE,
     CURRENT_HVAC_OFF,
     FAN_AUTO,
-    FAN_HIGH,
-    FAN_LOW,
-    FAN_MEDIUM,
     HVAC_MODE_AUTO,
     HVAC_MODE_COOL,
     HVAC_MODE_DRY,
@@ -21,15 +19,9 @@ from homeassistant.components.climate.const import (
     HVAC_MODE_HEAT,
     HVAC_MODE_HEAT_COOL,
     HVAC_MODE_OFF,
-    HVAC_MODES,
     PRESET_NONE,
-    SUPPORT_AUX_HEAT,
-    SUPPORT_FAN_MODE,
-    SUPPORT_PRESET_MODE,
-    SUPPORT_TARGET_TEMPERATURE,
 )
 from homeassistant.const import (
-    ATTR_NAME,
     ATTR_TEMPERATURE,
     CONF_DEVICE_CLASS,
     CONF_DEVICE_ID,
@@ -47,7 +39,27 @@ from homeassistant.helpers.typing import (
 )
 import voluptuous as vol
 
-from .const import *
+from .const import (
+    AIDO_HVAC_MODES,
+    AIDO_SUPPORT_FLAGS,
+    AVAILABLE_ATTRIBUTES_ZONE,
+    DEFAULT_DEVICE_CLASS,
+    DEFAULT_DEVICE_ID,
+    DOMAIN,
+    MACHINE_HVAC_MODES,
+    MACHINE_PRESET_MODES,
+    MACHINE_SUPPORT_FLAGS,
+    PRESET_AIR_MODE,
+    PRESET_FLOOR_MODE,
+    PRESET_SLEEP,
+    ZONE_FAN_MODES,
+    ZONE_FAN_MODES_R,
+    ZONE_HVAC_MODES,
+    ZONE_PRESET_MODES,
+    ZONE_SUPPORT_FLAGS,
+)
+
+SCAN_INTERVAL = timedelta(seconds=10)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -65,14 +77,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     }
 )
 
-async def async_setup_entry(
-    hass: core.HomeAssistant,
-    config_entry: config_entries.ConfigEntry,
-    async_add_entities,
-):
-    """Setup sensors from a config entry created in the integrations UI."""
-    config = hass.data[DOMAIN][config_entry.entry_id]
-    # Update our config to include new repos and remove those that have been removed.
+def get_devices(config):
     port = config[CONF_PORT]
     host = config[CONF_HOST]
     machine_id = config[CONF_DEVICE_ID]
@@ -83,6 +88,17 @@ async def async_setup_entry(
         devices = [InnobusMachine(machine)]+[InnobusZone(z) for z in machine.get_zones()]
     else:
         devices = [Aido(machine)]
+    _LOGGER.info("Airzone devices " + str(devices) + " " + str(len(devices)))
+    return devices
+
+async def async_setup_entry(
+    hass: core.HomeAssistant,
+    config_entry: config_entries.ConfigEntry,
+    async_add_entities,
+):
+    """Setup sensors from a config entry created in the integrations UI."""
+    config = hass.data[DOMAIN][config_entry.entry_id]
+    devices = get_devices(config)    
     async_add_entities(devices, update_before_add=True)
 
 def setup_platform(
@@ -91,26 +107,8 @@ def setup_platform(
     add_entities: Callable,
     discovery_info: Optional[DiscoveryInfoType] = None,
 ) -> None:
-    """Set up the Airzone climate platform."""
-    port = config.get(CONF_PORT)
-    host = config.get(CONF_HOST)
-    machine_id = config.get(CONF_DEVICE_ID)
-    system_class = config.get(CONF_DEVICE_CLASS)
-    
-    machine = airzone_factory(host, port, machine_id, system_class)
-    if system_class == 'innobus':
-        devices = [InnobusMachine(machine)]+[InnobusZone(z) for z in machine.get_zones()]
-    else:
-        devices = [Aido(machine)]
-    _LOGGER.info("Airzone devices " + str(devices) + " " + str(len(devices)))
+    devices = get_devices(config)    
     add_entities(devices)
-
-
-ZONE_HVAC_MODES = [HVAC_MODE_AUTO, HVAC_MODE_HEAT_COOL, HVAC_MODE_OFF]
-PRESET_SLEEP = 'SLEEP'
-ZONE_PRESET_MODES = [PRESET_NONE, PRESET_SLEEP]
-ZONE_FAN_MODES = [FAN_AUTO, FAN_LOW, FAN_MEDIUM, FAN_HIGH]
-ZONE_SUPPORT_FLAGS = SUPPORT_TARGET_TEMPERATURE | SUPPORT_FAN_MODE | SUPPORT_PRESET_MODE
 
 
 class InnobusZone(ClimateEntity):
@@ -121,11 +119,6 @@ class InnobusZone(ClimateEntity):
         self._name = "Airzone Zone "  + str(airzone_zone.zoneId)
         _LOGGER.info("Airzone configure zone " + self._name)
         self._airzone_zone = airzone_zone
-        from airzone.innobus import ZoneMode
-        self._operational_modes = [e.name for e in ZoneMode]
-        from airzone.innobus import FancoilSpeed
-        self._fan_list = [e.name for e in FancoilSpeed]
-
         self._available_attributes = AVAILABLE_ATTRIBUTES_ZONE
         self._state_attrs = {}
         self._state_attrs.update(
@@ -198,19 +191,18 @@ class InnobusZone(ClimateEntity):
 
     @property
     def hvac_action(self) -> Optional[str]:
-        """Return the current running hvac operation."""
-        from airzone.innobus import MachineOperationMode
-        op_mode = self._airzone_zone._machine.get_operation_mode()
+        """Return the current running hvac operation."""    
+        op_mode = self._airzone_zone._machine.get_operation_mode().name
 
         if self._airzone_zone.is_floor_active():
             return CURRENT_HVAC_HEAT
 
         if self._airzone_zone.is_requesting_air():
-            if op_mode == MachineOperationMode.HOT_AIR:
+            if op_mode == 'HOT_AIR':
                 return CURRENT_HVAC_HEAT
             return CURRENT_HVAC_COOL
 
-        if op_mode == MachineOperationMode.STOP:
+        if op_mode == 'STOP':
             return CURRENT_HVAC_OFF
         return CURRENT_HVAC_IDLE
 
@@ -256,44 +248,22 @@ class InnobusZone(ClimateEntity):
 
     @property
     def fan_mode(self) -> Optional[str]:
-        """Return the fan setting.
-        Requires SUPPORT_FAN_MODE.
-        """
-        from airzone.innobus import FancoilSpeed
-        fan_mode = self._airzone_zone.get_speed_selection()
-        if fan_mode == FancoilSpeed.AUTOMATIC:
-            return FAN_AUTO
-        if fan_mode == FancoilSpeed.SPEED_1:
-            return FAN_LOW
-        if fan_mode == FancoilSpeed.SPEED_2:
-            return FAN_MEDIUM
-        if fan_mode == FancoilSpeed.SPEED_3:
-            return FAN_HIGH
-        return FAN_AUTO
+        """Return the fan setting.        
+        """        
+        fan_mode = self._airzone_zone.get_speed_selection().name
+        return ZONE_FAN_MODES_R[fan_mode]        
 
 
     @property
     def fan_modes(self) -> Optional[List[str]]:
-        """Return the list of available fan modes.
-        Requires SUPPORT_FAN_MODE.
+        """Return the list of available fan modes.        
         """
-        return ZONE_FAN_MODES
+        return list(ZONE_FAN_MODES.keys())
 
     def set_fan_mode(self, fan_mode: str) -> None:
         """Set new target fan mode."""
-
-        if fan_mode == FAN_AUTO:
-            self._airzone_zone.set_speed_selection('AUTOMATIC')
-            return
-        if fan_mode == FAN_LOW:
-            self._airzone_zone.set_speed_selection('SPEED_1')
-            return FAN_LOW
-        if fan_mode == FAN_MEDIUM:
-            self._airzone_zone.set_speed_selection('SPEED_2')
-            return FAN_MEDIUM
-        if fan_mode == FAN_HIGH:
-            self._airzone_zone.set_speed_selection('SPEED_3')
-
+        self._airzone_zone.set_speed_selection(ZONE_FAN_MODES[fan_mode])
+        
     @property
     def min_temp(self):
         return self._airzone_zone.get_min_signal_value()
@@ -322,11 +292,6 @@ class InnobusZone(ClimateEntity):
             return value.value
         return value
 
-MACHINE_HVAC_MODES = [HVAC_MODE_FAN_ONLY, HVAC_MODE_HEAT, HVAC_MODE_COOL, HVAC_MODE_OFF]
-PRESET_AIR_MODE = 'AIRE'
-PRESET_FLOOR_MODE = 'FLOOR'
-MACHINE_PRESET_MODES = [PRESET_AIR_MODE, PRESET_FLOOR_MODE]
-MACHINE_SUPPORT_FLAGS = SUPPORT_AUX_HEAT | SUPPORT_PRESET_MODE
 
 class InnobusMachine(ClimateEntity):
     """Representation of a Innobus Machine."""
@@ -336,8 +301,8 @@ class InnobusMachine(ClimateEntity):
         self._name = "Airzone Machine "  + str(airzone_machine._machineId)
         _LOGGER.info("Airzone configure machine " + self._name)
         self._airzone_machine = airzone_machine
-        from airzone.innobus import MachineOperationMode
-        self._operational_modes = [e.name for e in MachineOperationMode]
+#        from airzone.innobus import MachineOperationMode
+#        self._operational_modes = [e.name for e in MachineOperationMode]
 
     @property
     def name(self):
@@ -404,10 +369,9 @@ class InnobusMachine(ClimateEntity):
     def preset_mode(self) -> Optional[str]:
         """Return the current preset mode, e.g., home, away, temp.
         Requires SUPPORT_PRESET_MODE.
-        """
-        from airzone.innobus import MachineOperationMode
-        current_op = self._airzone_machine.get_operation_mode()
-        if current_op == MachineOperationMode.HOT_AIR:
+        """        
+        current_op = self._airzone_machine.get_operation_mode().name
+        if current_op == 'HOT_AIR':
             return PRESET_AIR_MODE
         else:
             return PRESET_FLOOR_MODE
@@ -445,9 +409,8 @@ class InnobusMachine(ClimateEntity):
     def is_aux_heat(self) -> Optional[bool]:
         """Return true if aux heater.
         Requires SUPPORT_AUX_HEAT.
-        """
-        from airzone.innobus import MachineOperationMode
-        return self._airzone_machine.get_operation_mode() == MachineOperationMode.HOTPLUS
+        """        
+        return self._airzone_machine.get_operation_mode().name == 'HOTPLUS'
 
     @property
     def unique_id(self):
@@ -459,10 +422,6 @@ class InnobusMachine(ClimateEntity):
         _LOGGER.debug(str(self._airzone_machine))
 
 
-AIDO_HVAC_MODES = [HVAC_MODE_AUTO, HVAC_MODE_FAN_ONLY, HVAC_MODE_HEAT, HVAC_MODE_COOL, HVAC_MODE_OFF, HVAC_MODE_DRY]
-AIDO_FAN_MODES = [FAN_AUTO, "1", "2", "3", "4", "5", "6", "7"]
-AIDO_SUPPORT_FLAGS = SUPPORT_TARGET_TEMPERATURE | SUPPORT_FAN_MODE
-
 class Aido(ClimateEntity):
     """Representation of a Innobus Machine."""
 
@@ -471,8 +430,10 @@ class Aido(ClimateEntity):
         self._name = "Aido "  + str(airzone_aido._machineId)
         _LOGGER.info("Airzone configure machine " + self._name)
         self._airzone_aido = airzone_aido
-        from airzone.aido import OperationMode
-        self._operational_modes = [e.name for e in OperationMode]
+        #TODO: the fan available modes must be configured by the setup
+        self._fan_modes = [FAN_AUTO, "1", "2", "3", "4", "5", "6", "7"]
+        self._min_temp = 17
+        self._max_temp = 35
 
     @property
     def name(self):
@@ -567,8 +528,7 @@ class Aido(ClimateEntity):
 
     @property
     def fan_mode(self) -> Optional[str]:
-        """Return the fan setting.
-        Requires SUPPORT_FAN_MODE.
+        """Return the fan setting.        
         """
         from airzone.aido import Speed
         fan_mode = self._airzone_aido.get_speed()
@@ -578,7 +538,6 @@ class Aido(ClimateEntity):
     
     def set_fan_mode(self, fan_mode: str) -> None:
         """Set new target fan mode."""
-
         if fan_mode == FAN_AUTO:
             self._airzone_aido.set_speed('AUTO')
             return
@@ -586,20 +545,17 @@ class Aido(ClimateEntity):
 
     @property
     def fan_modes(self) -> Optional[List[str]]:
-        """Return the list of available fan modes.
-        Requires SUPPORT_FAN_MODE.
+        """Return the list of available fan modes.        
         """
-        return AIDO_FAN_MODES
+        return self._fan_modes
     
     @property
-    def min_temp(self):
-        #TODO: allow to parametrice
-        return 17
+    def min_temp(self):        
+        return self._min_temp
 
     @property
-    def max_temp(self):
-        #TODO: allow to parametrice
-        return 35
+    def max_temp(self):        
+        return self._max_temp
 
     @property
     def unique_id(self):
