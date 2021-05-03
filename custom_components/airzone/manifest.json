@@ -1,13 +1,13 @@
 {
+  "codeowners": ["@gpulido"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/gpulido/homeassistant-airzone",
   "domain": "airzone",
   "name": "AirZone",
-  "version": "1.0.0",
-  "documentation": "https://home-assistant.io/components/airzone/",
-  "dependencies": [],
-  "codeowners": [
-    "@gpulido"
-  ],
   "requirements": [
-    "python-airzone==0.4.3"
-  ]
+    "python-airzone==0.6.1"
+  ],
+  "version": "1.0.0",
+  "iot_class": "local_polling"
 }
