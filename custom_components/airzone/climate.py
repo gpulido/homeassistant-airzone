@@ -26,8 +26,6 @@ from homeassistant.const import (
     CONF_DEVICE_CLASS,
     CONF_DEVICE_ID,
     CONF_HOST,
-    CONF_NAME,
-    CONF_PATH,
     CONF_PORT,
     TEMP_CELSIUS,
 )
@@ -40,11 +38,16 @@ from homeassistant.helpers.typing import (
 import voluptuous as vol
 
 from .const import (
-    AIDO_HVAC_MODES,
+    AIDO_BASIC_HVAC_MODES,
+    AIDO_FULL_HVAC_MODES,
     AIDO_SUPPORT_FLAGS,
     AVAILABLE_ATTRIBUTES_ZONE,
+    CONF_HAS_DRY_MODE,
+    CONF_SPEED_PERCENTAGE,
     DEFAULT_DEVICE_CLASS,
     DEFAULT_DEVICE_ID,
+    DEFAULT_HAS_DRY_MODE,
+    DEFAULT_SPEED_AS_PER,
     DOMAIN,
     MACHINE_HVAC_MODES,
     MACHINE_PRESET_MODES,
@@ -63,17 +66,15 @@ SCAN_INTERVAL = timedelta(seconds=10)
 
 _LOGGER = logging.getLogger(__name__)
 
-REPO_SCHEMA = vol.Schema(
-    {vol.Required(CONF_PATH): cv.string, vol.Optional(CONF_NAME): cv.string}
-)
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
         vol.Required(CONF_HOST): cv.string,
         vol.Required(CONF_PORT): cv.port,
         vol.Optional(CONF_DEVICE_ID, default=DEFAULT_DEVICE_ID): int,
-        vol.Optional(CONF_DEVICE_CLASS, default=DEFAULT_DEVICE_CLASS): vol.In(["innobus", "aido"])
-
+        vol.Optional(CONF_DEVICE_CLASS, default=DEFAULT_DEVICE_CLASS): vol.In(["innobus", "aido"]),
+        vol.Optional(CONF_SPEED_PERCENTAGE, default=DEFAULT_SPEED_AS_PER): cv.boolean,
+        vol.Optional(CONF_HAS_DRY_MODE, default=DEFAULT_HAS_DRY_MODE): cv.boolean,
     }
 )
 
@@ -83,7 +84,11 @@ def get_devices(config):
     machine_id = config[CONF_DEVICE_ID]
     system_class = config[CONF_DEVICE_CLASS]
     
-    machine = airzone_factory(host, port, machine_id, system_class)
+    aido_args = {"has_dry": config[CONF_HAS_DRY_MODE], "speed_as_per": config[CONF_SPEED_PERCENTAGE]}    
+    
+    machine = airzone_factory(host, port, machine_id, system_class, **aido_args)
+
+
     if system_class == 'innobus':
         devices = [InnobusMachine(machine)]+[InnobusZone(z) for z in machine.get_zones()]
     else:
@@ -423,15 +428,16 @@ class InnobusMachine(ClimateEntity):
 
 
 class Aido(ClimateEntity):
-    """Representation of a Innobus Machine."""
+    """Representation of a Aido Machine."""
 
     def __init__(self, airzone_aido):
         """Initialize the device."""
         self._name = "Aido "  + str(airzone_aido._machineId)
         _LOGGER.info("Airzone configure machine " + self._name)
         self._airzone_aido = airzone_aido
+        
         #TODO: the fan available modes must be configured by the setup
-        self._fan_modes = [FAN_AUTO, "1", "2", "3", "4", "5", "6", "7"]
+        self._fan_modes = [FAN_AUTO] + [str(n) for n in range(1, self._airzone_aido.get_speed_steps() + 1)]        
         self._min_temp = 17
         self._max_temp = 35
 
@@ -442,7 +448,7 @@ class Aido(ClimateEntity):
 
     @property
     def supported_features(self):
-        """Return the list of supported features."""
+        """Return the list of supported features."""        
         return AIDO_SUPPORT_FLAGS
 
     @property
@@ -484,7 +490,9 @@ class Aido(ClimateEntity):
         """Return the list of available hvac operation modes.
         Need to be a subset of HVAC_MODES.
         """
-        return AIDO_HVAC_MODES
+        if self._airzone_aido.has_dry_state():
+            return AIDO_FULL_HVAC_MODES
+        return AIDO_BASIC_HVAC_MODES
 
     def set_hvac_mode(self, hvac_mode: str) -> None:
         """Set new target hvac mode."""

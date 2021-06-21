@@ -38,7 +38,7 @@ async def test_add_airzone(m_airzone_factory, hass):
 
     config_entry = MockConfigEntry(
         domain=DOMAIN,
-        unique_id="kodi_recently_added_media",
+        unique_id="airzone_aido",
         data={
             CONF_HOST: "192.168.1.10",
             CONF_PORT: "5020",
