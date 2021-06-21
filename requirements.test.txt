@@ -3,4 +3,4 @@ pytest<6.0
 pytest-cov<3.0.0
 pytest-homeassistant-custom-component
 # From our manifest.json for our custom component
-python-airzone==0.6.1
+python-airzone==0.7.0
