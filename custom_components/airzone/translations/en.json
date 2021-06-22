@@ -10,8 +10,7 @@
                     "port": "port",
                     "device_id": "Device Id",
                     "device_class": "Class",
-                    "speed_as_percentage": "The speed is a percentage (only for Aido)",
-                    "has_dry_mode": "Has DRY mode (only for Aido)"
+                    "speed_as_percentage": "The speed is a percentage (only for Aido)"                    
                 },
                 "description": "Enter your Airzone config.",
                 "title": "Configuration"

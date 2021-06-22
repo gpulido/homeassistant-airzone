@@ -7,11 +7,9 @@ import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 
 from .const import (
-    CONF_HAS_DRY_MODE,
     CONF_SPEED_PERCENTAGE,
     DEFAULT_DEVICE_CLASS,
     DEFAULT_DEVICE_ID,
-    DEFAULT_HAS_DRY_MODE,
     DEFAULT_SPEED_AS_PER,
     DOMAIN,
 )
@@ -24,8 +22,7 @@ AIRZONE_SCHEMA = vol.Schema(
         vol.Required(CONF_PORT, default=7000): vol.Coerce(int),
         vol.Optional(CONF_DEVICE_ID, default=DEFAULT_DEVICE_ID): int,
         vol.Optional(CONF_DEVICE_CLASS, default=DEFAULT_DEVICE_CLASS): vol.In(["innobus", "aido"]),
-        vol.Optional(CONF_SPEED_PERCENTAGE, default=DEFAULT_SPEED_AS_PER): cv.boolean,
-        vol.Optional(CONF_HAS_DRY_MODE, default=DEFAULT_HAS_DRY_MODE): cv.boolean,
+        vol.Optional(CONF_SPEED_PERCENTAGE, default=DEFAULT_SPEED_AS_PER): cv.boolean        
 
     }
 )
@@ -45,7 +42,7 @@ class AirzoneConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             host = user_input[CONF_HOST]
             machine_id = user_input[CONF_DEVICE_ID]
             system_class = user_input[CONF_DEVICE_CLASS]
-            aido_args = {"has_dry": user_input[CONF_HAS_DRY_MODE], "speed_as_per": user_input[CONF_SPEED_PERCENTAGE]}    
+            aido_args = {"speed_as_per": user_input[CONF_SPEED_PERCENTAGE]}    
             try:
                 airzone_factory(host, port, machine_id, system_class, **aido_args)
             except:

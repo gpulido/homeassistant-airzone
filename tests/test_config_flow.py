@@ -5,11 +5,7 @@ from homeassistant.const import CONF_DEVICE_CLASS, CONF_DEVICE_ID, CONF_HOST, CO
 from pytest_homeassistant_custom_component.common import MockConfigEntry, patch
 
 from custom_components.airzone import config_flow
-from custom_components.airzone.const import (
-    CONF_HAS_DRY_MODE,
-    CONF_SPEED_PERCENTAGE,
-    DOMAIN,
-)
+from custom_components.airzone.const import CONF_SPEED_PERCENTAGE, DOMAIN
 
 
 async def test_flow_user_init(hass):
@@ -49,7 +45,6 @@ async def test_add_airzone(m_airzone_factory, hass):
             CONF_DEVICE_ID: 1,
             CONF_DEVICE_CLASS: "aido",
             CONF_SPEED_PERCENTAGE: False,
-            CONF_HAS_DRY_MODE: False,
         },
     )
     config_entry.add_to_hass(hass)

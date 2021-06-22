@@ -38,15 +38,12 @@ from homeassistant.helpers.typing import (
 import voluptuous as vol
 
 from .const import (
-    AIDO_BASIC_HVAC_MODES,
-    AIDO_FULL_HVAC_MODES,
+    AIDO_HVAC_MODES,
     AIDO_SUPPORT_FLAGS,
     AVAILABLE_ATTRIBUTES_ZONE,
-    CONF_HAS_DRY_MODE,
     CONF_SPEED_PERCENTAGE,
     DEFAULT_DEVICE_CLASS,
     DEFAULT_DEVICE_ID,
-    DEFAULT_HAS_DRY_MODE,
     DEFAULT_SPEED_AS_PER,
     DOMAIN,
     MACHINE_HVAC_MODES,
@@ -73,8 +70,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
         vol.Required(CONF_PORT): cv.port,
         vol.Optional(CONF_DEVICE_ID, default=DEFAULT_DEVICE_ID): int,
         vol.Optional(CONF_DEVICE_CLASS, default=DEFAULT_DEVICE_CLASS): vol.In(["innobus", "aido"]),
-        vol.Optional(CONF_SPEED_PERCENTAGE, default=DEFAULT_SPEED_AS_PER): cv.boolean,
-        vol.Optional(CONF_HAS_DRY_MODE, default=DEFAULT_HAS_DRY_MODE): cv.boolean,
+        vol.Optional(CONF_SPEED_PERCENTAGE, default=DEFAULT_SPEED_AS_PER): cv.boolean        
     }
 )
 
@@ -84,7 +80,7 @@ def get_devices(config):
     machine_id = config[CONF_DEVICE_ID]
     system_class = config[CONF_DEVICE_CLASS]
     
-    aido_args = {"has_dry": config[CONF_HAS_DRY_MODE], "speed_as_per": config[CONF_SPEED_PERCENTAGE]}    
+    aido_args = {"speed_as_per": config[CONF_SPEED_PERCENTAGE]}    
     
     machine = airzone_factory(host, port, machine_id, system_class, **aido_args)
 
@@ -489,10 +485,8 @@ class Aido(ClimateEntity):
     def hvac_modes(self) -> List[str]:
         """Return the list of available hvac operation modes.
         Need to be a subset of HVAC_MODES.
-        """
-        if self._airzone_aido.has_dry_state():
-            return AIDO_FULL_HVAC_MODES
-        return AIDO_BASIC_HVAC_MODES
+        """        
+        return AIDO_HVAC_MODES
 
     def set_hvac_mode(self, hvac_mode: str) -> None:
         """Set new target hvac mode."""
