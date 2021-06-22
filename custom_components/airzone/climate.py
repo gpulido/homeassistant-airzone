@@ -38,7 +38,9 @@ from homeassistant.helpers.typing import (
 import voluptuous as vol
 
 from .const import (
+    AIDO_HVAC_MODE_MAP,
     AIDO_HVAC_MODES,
+    AIDO_MODE_TO_HVAC_MAP,
     AIDO_SUPPORT_FLAGS,
     AVAILABLE_ATTRIBUTES_ZONE,
     CONF_SPEED_PERCENTAGE,
@@ -454,31 +456,22 @@ class Aido(ClimateEntity):
 
     def turn_on(self):
         """Turn on."""
-        self._airzone_aido.turnon_tacto()
+        self._airzone_aido.turn_on()
 
     def turn_off(self):
         """Turn off."""
-        self._airzone_aido.turnoff_tacto()
+        self._airzone_aido.turn_off()
 
     @property
     def hvac_mode(self) -> str:
         """Return hvac operation ie. heat, cool mode.
         Need to be one of HVAC_MODE_*.
-        """
-        from airzone.aido import OperationMode
+        """        
         if not self._airzone_aido.get_is_machine_on():
             return HVAC_MODE_OFF
 
-        current_op = self._airzone_aido.get_operation_mode()
-        if current_op == OperationMode.AUTO:
-            return HVAC_MODE_AUTO
-        if current_op == OperationMode.COOLING:
-            return HVAC_MODE_COOL
-        if current_op == OperationMode.HEATING:
-            return HVAC_MODE_HEAT
-        if current_op == OperationMode.FAN:
-            return HVAC_MODE_FAN_ONLY
-        return HVAC_MODE_DRY
+        current_op = self._airzone_aido.get_operation_mode().name
+        return AIDO_MODE_TO_HVAC_MAP[current_op]        
 
 
     @property
@@ -491,26 +484,10 @@ class Aido(ClimateEntity):
     def set_hvac_mode(self, hvac_mode: str) -> None:
         """Set new target hvac mode."""
         if hvac_mode == HVAC_MODE_OFF:
-            self._airzone_aido.turn_off()
+            self.turn_off()
             return
-        
-        if not self._airzone_aido.get_is_machine_on():
-            self._airzone_aido.turn_on()
-        if hvac_mode == HVAC_MODE_COOL:
-            self._airzone_aido.set_operation_mode('COOLING')
-            return
-        if hvac_mode == HVAC_MODE_AUTO:
-            self._airzone_aido.set_operation_mode('AUTO')
-            return
-        if hvac_mode == HVAC_MODE_HEAT:
-            self._airzone_aido.set_operation_mode('HEATING')
-            return
-        if hvac_mode == HVAC_MODE_FAN_ONLY:
-            self._airzone_aido.set_operation_mode('FAN')
-            return
-        if hvac_mode == HVAC_MODE_DRY:
-            self._airzone_aido.set_operation_mode('DRY')
-            return
+
+        self._airzone_aido.set_operation_mode(AIDO_HVAC_MODE_MAP[hvac_mode])       
     
     @property
     def current_temperature(self):
@@ -531,12 +508,11 @@ class Aido(ClimateEntity):
     @property
     def fan_mode(self) -> Optional[str]:
         """Return the fan setting.        
-        """
-        from airzone.aido import Speed
-        fan_mode = self._airzone_aido.get_speed()
-        if fan_mode == Speed.AUTO:
+        """        
+        fan_mode = self._airzone_aido.get_speed().value
+        if fan_mode == 0:
             return FAN_AUTO
-        return str(fan_mode)
+        return str(fan_mode.value)
     
     def set_fan_mode(self, fan_mode: str) -> None:
         """Set new target fan mode."""

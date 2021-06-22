@@ -6,8 +6,8 @@
   "domain": "airzone",
   "name": "AirZone",
   "requirements": [
-    "python-airzone==0.7.1"
+    "python-airzone==0.7.2"
   ],
-  "version": "1.2.0",
+  "version": "1.2.1",
   "iot_class": "local_polling"
 }
