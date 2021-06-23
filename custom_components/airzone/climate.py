@@ -512,7 +512,7 @@ class Aido(ClimateEntity):
         fan_mode = self._airzone_aido.get_speed().value
         if fan_mode == 0:
             return FAN_AUTO
-        return str(fan_mode.value)
+        return str(fan_mode)
     
     def set_fan_mode(self, fan_mode: str) -> None:
         """Set new target fan mode."""
