@@ -420,7 +420,7 @@ class InnobusMachine(ClimateEntity):
         return self._airzone_machine.unique_id()
 
 
-    def update(self):
+    async def async_update(self):
         self._airzone_machine.retrieve_machine_status(False)
         _LOGGER.debug(str(self._airzone_machine))
 
@@ -429,13 +429,14 @@ class Aido(ClimateEntity):
     """Representation of a Aido Machine."""
 
     def __init__(self, airzone_aido):
+        super().__init__()
         """Initialize the device."""
         self._name = "Aido "  + str(airzone_aido._machineId)
         _LOGGER.info("Airzone configure machine " + self._name)
         self._airzone_aido = airzone_aido
         
         #TODO: the fan available modes must be configured by the setup
-        self._fan_modes = [FAN_AUTO] + [str(n) for n in range(1, self._airzone_aido.get_speed_steps() + 1)]        
+        self._fan_modes = [FAN_AUTO] + [str(n) for n in range(1, airzone_aido.get_speed_steps() + 1)]        
         self._min_temp = 17
         self._max_temp = 35
 
@@ -540,6 +541,6 @@ class Aido(ClimateEntity):
         return self._airzone_aido.unique_id()
 
 
-    def update(self):
+    async def async_update(self):
         self._airzone_aido._retrieve_machine_state()
         _LOGGER.debug(str(self._airzone_aido))
