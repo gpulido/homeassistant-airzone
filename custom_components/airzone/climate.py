@@ -304,8 +304,6 @@ class InnobusMachine(ClimateEntity):
         self._name = "Airzone Machine "  + str(airzone_machine._machineId)
         _LOGGER.info("Airzone configure machine " + self._name)
         self._airzone_machine = airzone_machine
-#        from airzone.innobus import MachineOperationMode
-#        self._operational_modes = [e.name for e in MachineOperationMode]
 
     @property
     def name(self):

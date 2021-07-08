@@ -1,9 +1,9 @@
 """Tests for the climate module."""
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from airzone.aido import OperationMode, Speed
 from homeassistant.components.climate.const import FAN_AUTO, HVAC_MODE_COOL
-from pytest_homeassistant_custom_component.common import (  # noqa: F401,F811
+from pytest_homeassistant_custom_component.common import (  # noqa: E811,F401
     MockConfigEntry,
     patch,
 )
@@ -20,6 +20,7 @@ async def test_aido_async_update_success(hass):
     airzone_aido.get_speed = MagicMock(return_value=Speed.SPEED_2)
     airzone_aido.get_is_machine_on = MagicMock(return_value=True)
     airzone_aido.get_operation_mode = MagicMock(return_value=OperationMode.COOLING)
+    airzone_aido.get_speed_steps = MagicMock(return_value=4)
     aido = Aido(airzone_aido)
     aido.hass = hass
     await aido.async_update()
@@ -40,7 +41,7 @@ async def test_aido_async_test_fan_mode(hass):
     airzone_aido.get_speed = MagicMock(return_value=Speed.SPEED_2)
     airzone_aido.get_is_machine_on = MagicMock(return_value=True)
     airzone_aido.get_operation_mode = MagicMock(return_value=OperationMode.COOLING)
-    airzone_aido.get_speed_steps = MagicMock(return_value=4)()
+    airzone_aido.get_speed_steps = MagicMock(return_value=4)
     aido = Aido(airzone_aido)
     aido.hass = hass
     aido.set_fan_mode("1")
