@@ -12,6 +12,7 @@ from .const import (
     DEFAULT_DEVICE_ID,
     DEFAULT_SPEED_AS_PER,
     DOMAIN,
+    SYSTEM_TYPES,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -21,7 +22,7 @@ AIRZONE_SCHEMA = vol.Schema(
         vol.Required(CONF_HOST): cv.string,
         vol.Required(CONF_PORT, default=7000): vol.Coerce(int),
         vol.Optional(CONF_DEVICE_ID, default=DEFAULT_DEVICE_ID): int,
-        vol.Optional(CONF_DEVICE_CLASS, default=DEFAULT_DEVICE_CLASS): vol.In(["innobus", "aido"]),
+        vol.Optional(CONF_DEVICE_CLASS, default=DEFAULT_DEVICE_CLASS): vol.In(SYSTEM_TYPES),
         vol.Optional(CONF_SPEED_PERCENTAGE, default=DEFAULT_SPEED_AS_PER): cv.boolean        
 
     }
@@ -42,9 +43,9 @@ class AirzoneConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             host = user_input[CONF_HOST]
             machine_id = user_input[CONF_DEVICE_ID]
             system_class = user_input[CONF_DEVICE_CLASS]
-            aido_args = {"speed_as_per": user_input[CONF_SPEED_PERCENTAGE]}    
+            aidoo_args = {"speed_as_per": user_input[CONF_SPEED_PERCENTAGE]}    
             try:
-                airzone_factory(host, port, machine_id, system_class, **aido_args)
+                airzone_factory(host, port, machine_id, system_class, **aidoo_args)
             except:
                 errors["base"] = "connection"
             if not errors:

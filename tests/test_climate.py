@@ -8,7 +8,7 @@ from pytest_homeassistant_custom_component.common import (  # noqa: E811,F401
     patch,
 )
 
-from custom_components.airzone.climate import Aido
+from custom_components.airzone.aidoo import Aidoo
 
 
 async def test_aido_async_update_success(hass):
@@ -21,7 +21,7 @@ async def test_aido_async_update_success(hass):
     airzone_aido.get_is_machine_on = MagicMock(return_value=True)
     airzone_aido.get_operation_mode = MagicMock(return_value=OperationMode.COOLING)
     airzone_aido.get_speed_steps = MagicMock(return_value=4)
-    aido = Aido(airzone_aido)
+    aido = Aidoo(airzone_aido)
     aido.hass = hass
     await aido.async_update()
 
@@ -42,7 +42,7 @@ async def test_aido_async_test_fan_mode(hass):
     airzone_aido.get_is_machine_on = MagicMock(return_value=True)
     airzone_aido.get_operation_mode = MagicMock(return_value=OperationMode.COOLING)
     airzone_aido.get_speed_steps = MagicMock(return_value=4)
-    aido = Aido(airzone_aido)
+    aido = Aidoo(airzone_aido)
     aido.hass = hass
     aido.set_fan_mode("1")
     assert aido.fan_modes == [FAN_AUTO, "1", "2", "3", "4"]
