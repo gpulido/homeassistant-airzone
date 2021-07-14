@@ -196,5 +196,5 @@ class LocalAPIMachine(ClimateEntity):
 
 
     async def async_update(self):
-        self.airzone_machine._retrieve_system_data()
+        self.airzone_machine.retrieve_system_data()
         _LOGGER.debug(str(self.airzone_machine))
