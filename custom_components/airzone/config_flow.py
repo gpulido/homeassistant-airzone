@@ -45,7 +45,9 @@ class AirzoneConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             system_class = user_input[CONF_DEVICE_CLASS]
             aidoo_args = {"speed_as_per": user_input[CONF_SPEED_PERCENTAGE]}    
             try:
-                airzone_factory(host, port, machine_id, system_class, **aidoo_args)
+                m = await self.hass.async_add_executor_job(lambda: airzone_factory(host, port, machine_id, system_class, **aidoo_args))
+                if not m.machine_state:
+                    errors["base"] = "connection"
             except:
                 errors["base"] = "connection"
             if not errors:

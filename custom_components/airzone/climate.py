@@ -70,7 +70,7 @@ async def async_setup_entry(
 ):
     """Setup sensors from a config entry created in the integrations UI."""
     config = hass.data[DOMAIN][config_entry.entry_id]
-    devices = get_devices(config)    
+    devices = await hass.async_add_executor_job(get_devices(config))
     async_add_entities(devices, update_before_add=True)
 
 def setup_platform(
