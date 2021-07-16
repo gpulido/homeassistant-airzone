@@ -42,7 +42,7 @@ async def async_get_devices(config, hass):
 
     aidoo_args = {"speed_as_per": config[CONF_SPEED_PERCENTAGE]}
 
-    machine = await hass.async_add_executor_job(airzone_factory(host, port, machine_id, system_class, **aidoo_args))
+    machine = await hass.async_add_executor_job(lambda: airzone_factory(host, port, machine_id, system_class, **aidoo_args))
 
     if system_class == 'aidoo':
         from aidoo import Aidoo as Machine
