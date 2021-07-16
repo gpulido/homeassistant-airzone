@@ -7,11 +7,7 @@ from homeassistant import config_entries, core
 from homeassistant.components.climate import PLATFORM_SCHEMA
 from homeassistant.const import CONF_DEVICE_CLASS, CONF_DEVICE_ID, CONF_HOST, CONF_PORT
 import homeassistant.helpers.config_validation as cv
-from homeassistant.helpers.typing import (
-    ConfigType,
-    DiscoveryInfoType,
-    HomeAssistantType,
-)
+from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 import voluptuous as vol
 
 from .const import (
@@ -34,19 +30,19 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
         vol.Required(CONF_PORT): cv.port,
         vol.Optional(CONF_DEVICE_ID, default=DEFAULT_DEVICE_ID): int,
         vol.Optional(CONF_DEVICE_CLASS, default=DEFAULT_DEVICE_CLASS): vol.In(SYSTEM_TYPES),
-        vol.Optional(CONF_SPEED_PERCENTAGE, default=DEFAULT_SPEED_AS_PER): cv.boolean        
+        vol.Optional(CONF_SPEED_PERCENTAGE, default=DEFAULT_SPEED_AS_PER): cv.boolean
     }
 )
 
-def get_devices(config):
+async def async_get_devices(config, hass):
     port = config[CONF_PORT]
     host = config[CONF_HOST]
     machine_id = config[CONF_DEVICE_ID]
     system_class = config[CONF_DEVICE_CLASS]
-    
-    aidoo_args = {"speed_as_per": config[CONF_SPEED_PERCENTAGE]}    
-    
-    machine = airzone_factory(host, port, machine_id, system_class, **aidoo_args)
+
+    aidoo_args = {"speed_as_per": config[CONF_SPEED_PERCENTAGE]}
+
+    machine = await hass.async_add_executor_job(airzone_factory(host, port, machine_id, system_class, **aidoo_args))
 
     if system_class == 'aidoo':
         from aidoo import Aidoo as Machine
@@ -59,7 +55,7 @@ def get_devices(config):
             from innobus import InnobusMachine as Machine
             from innobus import  InnobusZone as Zone
         devices = [Machine(machine)] + [Zone(z) for z in machine.get_zones()]
-        
+
     _LOGGER.info("Airzone devices " + str(devices) + " " + str(len(devices)))
     return devices
 
@@ -70,14 +66,14 @@ async def async_setup_entry(
 ):
     """Setup sensors from a config entry created in the integrations UI."""
     config = hass.data[DOMAIN][config_entry.entry_id]
-    devices = await hass.async_add_executor_job(get_devices(config))
+    devices = await async_get_devices(config, hass)
     async_add_entities(devices, update_before_add=True)
 
-def setup_platform(
-    hass: HomeAssistantType,
+async def async_setup_platform(
+    hass: core.HomeAssistant,
     config: ConfigType,
-    add_entities: Callable,
+    async_add_entities: Callable,
     discovery_info: Optional[DiscoveryInfoType] = None,
 ) -> None:
-    devices = get_devices(config)    
-    add_entities(devices)
+    devices = await async_get_devices(config, hass)
+    async_add_entities(devices)
