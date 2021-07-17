@@ -144,7 +144,7 @@ class LocalAPIMachine(ClimateEntity):
 
     def __init__(self, airzone_machine):
         """Initialize the device."""
-        self._name = "Airzone Machine "  + str(airzone_machine._machineId)
+        self._name = "Airzone Machine "  + str(airzone_machine._machine_id)
         _LOGGER.info("Airzone configure machine " + self._name)
         self.airzone_machine = airzone_machine
         
