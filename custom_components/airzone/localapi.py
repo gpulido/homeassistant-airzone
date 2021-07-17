@@ -28,7 +28,7 @@ class LocalAPIZone(ClimateEntity):
     def airzone_zone(self):
         return self._airzone_zone
 
-    @property.setter
+    @airzone_zone.setter
     def airzone_zone(self, value):
         self._airzone_zone = value
         self._name = value.name
