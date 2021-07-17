@@ -45,15 +45,15 @@ async def async_get_devices(config, hass):
     machine = await hass.async_add_executor_job(lambda: airzone_factory(host, port, machine_id, system_class, **aidoo_args))
 
     if system_class == 'aidoo':
-        from aidoo import Aidoo as Machine
+        from .aidoo import Aidoo as Machine
         devices = [Machine(machine)]
     else:
         if system_class == 'localapi':
-            from localapi import LocalAPIMachine as Machine
-            from localapi import  LocalAPIZone as Zone
+            from .localapi import LocalAPIMachine as Machine
+            from .localapi import  LocalAPIZone as Zone
         if system_class == 'innobus':
-            from innobus import InnobusMachine as Machine
-            from innobus import  InnobusZone as Zone
+            from .innobus import InnobusMachine as Machine
+            from .innobus import  InnobusZone as Zone
         devices = [Machine(machine)] + [Zone(z) for z in machine.get_zones()]
 
     _LOGGER.info("Airzone devices " + str(devices) + " " + str(len(devices)))
