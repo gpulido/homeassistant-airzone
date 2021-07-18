@@ -54,7 +54,7 @@ async def async_get_devices(config, hass):
         if system_class == 'innobus':
             from .innobus import InnobusMachine as Machine
             from .innobus import  InnobusZone as Zone
-        devices = [Machine(machine)] + [Zone(z) for z in machine.get_zones()]
+        devices = [Machine(machine)] + [Zone(z) for z in machine.zones]
 
     _LOGGER.info("Airzone devices " + str(devices) + " " + str(len(devices)))
     return devices
