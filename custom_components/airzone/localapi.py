@@ -54,11 +54,11 @@ class LocalAPIZone(ClimateEntity):
 
     def turn_on(self):
         """Turn on."""
-        self._airzone_zone.turn_on()
+        self.airzone_zone.turn_on()
 
     def turn_off(self):
         """Turn off."""
-        self._airzone_zone.turn_off()
+        self.airzone_zone.turn_off()
 
     @property
     def hvac_mode(self) -> str:
@@ -80,10 +80,10 @@ class LocalAPIZone(ClimateEntity):
     def set_hvac_mode(self, hvac_mode: str) -> None:
         """Set new target hvac mode."""
         if hvac_mode == HVAC_MODE_OFF:
-            self._airzone_zone.turn_off()
+            self.airzone_zone.turn_off()
 
         elif hvac_mode == HVAC_MODE_HEAT_COOL:
-            self._airzone_zone.turn_on()
+            self.airzone_zone.turn_on()
 
     #TODO: review if we can extract running hvac
     # @property
@@ -107,31 +107,32 @@ class LocalAPIZone(ClimateEntity):
     @property
     def current_temperature(self):
         """Return the current temperature."""
-        return self._airzone_zone.local_temperature
+        return self.airzone_zone.local_temperature
 
     @property
     def target_temperature(self):
-        return self._airzone_zone.signal_temperature_value
+        return self.airzone_zone.signal_temperature_value
 
     def set_temperature(self, **kwargs):
         """Set new target temperature."""
         temperature = kwargs.get(ATTR_TEMPERATURE)
         if temperature is None:
             return None
-        self._airzone_zone.signal_temperature_value = round(float(temperature), 1)
+        self.airzone_zone.signal_temperature_value = round(float(temperature), 1)
 
         
     @property
     def min_temp(self):
-        return self._airzone_zone.min_temp
+        return self.airzone_zone.min_temp
 
     @property
     def max_temp(self):
-        return self._airzone_zone.max_temp
+        return self.airzone_zone.max_temp
     
     @property
     def unique_id(self):
-        return self._airzone_zone.unique_id
+        #TODO change to unique id when implemented at python-airzone
+        return f'{self.airzone_zone.name}_Z{str(self.airzone_zone._zone_id)}
 
     def update(self):
         # Really not needed as the machine is the one that updates all      
