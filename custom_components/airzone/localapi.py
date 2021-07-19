@@ -7,6 +7,7 @@ from homeassistant.const import ATTR_TEMPERATURE, TEMP_CELSIUS, TEMP_FAHRENHEIT
 
 from .const import (
     LOCALAPI_HVAC_MODE_MAP,
+    LOCALAPI_MACHINE_HVAC_MODES,
     LOCALAPI_MODE_TO_HVAC_MAP,
     LOCALAPI_ZONE_HVAC_MODES,
     LOCALAPI_ZONE_SUPPORT_FLAGS,
@@ -132,7 +133,7 @@ class LocalAPIZone(ClimateEntity):
     @property
     def unique_id(self):
         #TODO change to unique id when implemented at python-airzone
-        return f'{self.airzone_zone.name}_Z{str(self.airzone_zone._zone_id)}
+        return f'{self.airzone_zone.name}_Z{str(self.airzone_zone._zone_id)}'
 
     def update(self):
         # Really not needed as the machine is the one that updates all      
@@ -159,7 +160,13 @@ class LocalAPIMachine(ClimateEntity):
         from airzone.localapi import TempUnits
         self._units = TEMP_CELSIUS
         if value.units == TempUnits.FAHRENHEIT:
-            self._units = TEMP_FAHRENHEIT    
+            self._units = TEMP_FAHRENHEIT
+
+    
+    @property
+    def supported_features(self):
+        """Return the list of supported features."""
+        return LOCALAPI_ZONE_SUPPORT_FLAGS  
 
     @property
     def name(self):
@@ -184,7 +191,7 @@ class LocalAPIMachine(ClimateEntity):
         """Return the list of available hvac operation modes.
         Need to be a subset of HVAC_MODES.
         """
-        return LOCALAPI_ZONE_HVAC_MODES
+        return LOCALAPI_MACHINE_HVAC_MODES
 
     def set_hvac_mode(self, hvac_mode: str) -> None:
         """Set new target hvac mode."""
@@ -197,5 +204,5 @@ class LocalAPIMachine(ClimateEntity):
 
 
     async def async_update(self):
-        self.airzone_machine.retrieve_system_data()
+        await self.hass.async_add_executor_job(lambda: self.airzone_machine.retrieve_system_data())        
         _LOGGER.debug(str(self.airzone_machine))
