@@ -178,6 +178,14 @@ class LocalAPIMachine(ClimateEntity):
         """Return the unit of measurement that is used."""
         return self._units
 
+    def set_temperature(self, **kwargs):
+        """Set new target temperature."""
+        temperature = kwargs.get(ATTR_TEMPERATURE)
+        if temperature is None:
+            return None
+        # Machines can't set temperature ignore or decide what to do.
+
+
     @property
     def hvac_mode(self) -> str:
         """Return hvac operation ie. heat, cool mode.
@@ -196,7 +204,7 @@ class LocalAPIMachine(ClimateEntity):
     def set_hvac_mode(self, hvac_mode: str) -> None:
         """Set new target hvac mode."""
         new_op = LOCALAPI_HVAC_MODE_MAP[hvac_mode]     
-        self._airzone_machine.set_operation_mode(new_op)            
+        self._airzone_machine.operation_mode = new_op
 
     @property
     def unique_id(self):
