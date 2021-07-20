@@ -136,15 +136,13 @@ class LocalAPIZone(ClimateEntity):
         return self.airzone_zone.max_temp
     
     @property
+    def current_humidity(self):
+        return self.airzone_zone.room_humidity
+
+    @property
     def unique_id(self):
-        #TODO change to unique id when implemented at python-airzone
-        return f'{self.airzone_zone.name}_Z{str(self.airzone_zone._zone_id)}'
-
-    def update(self):
-        # Really not needed as the machine is the one that updates all      
-        _LOGGER.debug(str(self._airzone_zone))
-
-
+        return self.airzone_zone.unique_id   
+            
 
 class LocalAPIMachine(ClimateEntity):
     """Representation of a LocalAPI Machine."""
@@ -232,7 +230,7 @@ class LocalAPIMachine(ClimateEntity):
     def set_hvac_mode(self, hvac_mode: str) -> None:
         """Set new target hvac mode."""
         new_op = LOCALAPI_HVAC_MODE_MAP[hvac_mode]     
-        self._airzone_machine.operation_mode = new_op
+        self._airzone_machine.operation_mode = new_op            
 
     @property
     def unique_id(self):
@@ -240,5 +238,5 @@ class LocalAPIMachine(ClimateEntity):
 
 
     async def async_update(self):
-        await self.hass.async_add_executor_job(lambda: self.airzone_machine.retrieve_system_data())        
+        await self.hass.async_add_executor_job(lambda: self.airzone_machine.retrieve_system_state())        
         _LOGGER.debug(str(self.airzone_machine))
