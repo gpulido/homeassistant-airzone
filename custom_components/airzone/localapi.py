@@ -1,13 +1,18 @@
 import logging
-from typing import List
+from typing import List, Optional
 
 from homeassistant.components.climate import ClimateEntity
-from homeassistant.components.climate.const import HVAC_MODE_HEAT_COOL, HVAC_MODE_OFF
+from homeassistant.components.climate.const import (
+    FAN_AUTO,
+    HVAC_MODE_HEAT_COOL,
+    HVAC_MODE_OFF,
+)
 from homeassistant.const import ATTR_TEMPERATURE, TEMP_CELSIUS, TEMP_FAHRENHEIT
 
 from .const import (
     LOCALAPI_HVAC_MODE_MAP,
     LOCALAPI_MACHINE_HVAC_MODES,
+    LOCALAPI_MACHINE_SUPPORT_FLAGS,
     LOCALAPI_MODE_TO_HVAC_MAP,
     LOCALAPI_ZONE_HVAC_MODES,
     LOCALAPI_ZONE_SUPPORT_FLAGS,
@@ -147,6 +152,7 @@ class LocalAPIMachine(ClimateEntity):
     def __init__(self, airzone_machine):
         """Initialize the device."""
         self._name = "Airzone Machine "  + str(airzone_machine._machine_id)
+        self._fan_modes = [FAN_AUTO] + [str(n) for n in range(1, 8)]
         _LOGGER.info("Airzone configure machine " + self._name)
         self.airzone_machine = airzone_machine
         
@@ -166,7 +172,7 @@ class LocalAPIMachine(ClimateEntity):
     @property
     def supported_features(self):
         """Return the list of supported features."""
-        return LOCALAPI_ZONE_SUPPORT_FLAGS  
+        return LOCALAPI_MACHINE_SUPPORT_FLAGS 
 
     @property
     def name(self):
@@ -184,6 +190,28 @@ class LocalAPIMachine(ClimateEntity):
         if temperature is None:
             return None
         # Machines can't set temperature ignore or decide what to do.
+    
+    @property
+    def fan_mode(self) -> Optional[str]:
+        """Return the fan setting.        
+        """        
+        fan_mode = self.airzone_machine.speed.value
+        if fan_mode == 0:
+            return FAN_AUTO
+        return str(fan_mode)
+    
+    def set_fan_mode(self, fan_mode: str) -> None:
+        """Set new target fan mode."""
+        if fan_mode == FAN_AUTO:
+            self.airzone_machine.speed = 0
+            return
+        self.airzone_machine.speed = int(fan_mode)
+
+    @property
+    def fan_modes(self) -> Optional[List[str]]:
+        """Return the list of available fan modes.        
+        """
+        return self._fan_modes
 
 
     @property
