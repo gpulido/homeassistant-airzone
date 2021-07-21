@@ -26,7 +26,7 @@ class LocalAPIZone(CoordinatorEntity, ClimateEntity):
     """Representation of a LocalAPI Zone."""
 
     def __init__(self, airzone_zone, coordinator):
-        super().__init__(self, coordinator)
+        super().__init__(coordinator)
         """Initialize the device."""        
         self.airzone_zone = airzone_zone        
         _LOGGER.info("Airzone configure zone " + self._name)
@@ -152,7 +152,7 @@ class LocalAPIMachine(CoordinatorEntity, ClimateEntity):
 
     def __init__(self, airzone_machine, coordinator):
         """Initialize the device."""
-        super().__init__(self, coordinator)
+        super().__init__(coordinator)
         self._name = "Airzone Machine "  + str(airzone_machine._machine_id)
         self._fan_modes = [FAN_AUTO] + [str(n) for n in range(1, 8)]
         _LOGGER.info("Airzone configure machine " + self._name)
