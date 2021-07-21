@@ -8,6 +8,7 @@ from homeassistant.components.climate.const import (
     HVAC_MODE_OFF,
 )
 from homeassistant.const import ATTR_TEMPERATURE, TEMP_CELSIUS, TEMP_FAHRENHEIT
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import (
     LOCALAPI_HVAC_MODE_MAP,
@@ -21,12 +22,13 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 
-class LocalAPIZone(ClimateEntity):
+class LocalAPIZone(CoordinatorEntity, ClimateEntity):
     """Representation of a LocalAPI Zone."""
 
-    def __init__(self, airzone_zone):
+    def __init__(self, airzone_zone, coordinator):
+        super().__init__(self, coordinator)
         """Initialize the device."""        
-        self.airzone_zone = airzone_zone                
+        self.airzone_zone = airzone_zone        
         _LOGGER.info("Airzone configure zone " + self._name)
         
 
@@ -141,18 +143,20 @@ class LocalAPIZone(ClimateEntity):
 
     @property
     def unique_id(self):
-        return self.airzone_zone.unique_id   
+        return self.airzone_zone.unique_id  
+
             
 
-class LocalAPIMachine(ClimateEntity):
+class LocalAPIMachine(CoordinatorEntity, ClimateEntity):
     """Representation of a LocalAPI Machine."""
 
-    def __init__(self, airzone_machine):
+    def __init__(self, airzone_machine, coordinator):
         """Initialize the device."""
+        super().__init__(self, coordinator)
         self._name = "Airzone Machine "  + str(airzone_machine._machine_id)
         self._fan_modes = [FAN_AUTO] + [str(n) for n in range(1, 8)]
         _LOGGER.info("Airzone configure machine " + self._name)
-        self.airzone_machine = airzone_machine
+        self.airzone_machine = airzone_machine        
         
     @property
     def airzone_machine(self):
@@ -235,8 +239,3 @@ class LocalAPIMachine(ClimateEntity):
     @property
     def unique_id(self):
         return self._airzone_machine.unique_id
-
-
-    async def async_update(self):
-        await self.hass.async_add_executor_job(lambda: self.airzone_machine.retrieve_system_state())        
-        _LOGGER.debug(str(self.airzone_machine))
