@@ -8,7 +8,6 @@ from homeassistant.components.climate import PLATFORM_SCHEMA
 from homeassistant.const import CONF_DEVICE_CLASS, CONF_DEVICE_ID, CONF_HOST, CONF_PORT
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 import voluptuous as vol
 
 from .const import (
@@ -51,34 +50,11 @@ async def async_get_devices(config, hass):
     else:
         if system_class == 'localapi':
             from .localapi import LocalAPIMachine as Machine
-            from .localapi import  LocalAPIZone as Zone
-            async def async_update_data():
-                """Fetch data from API endpoint.
-
-                This is the place to pre-process the data to lookup tables
-                so entities can quickly look up their data.
-                """
-                await hass.async_add_executor_job(lambda: machine.retrieve_system_state())
-                return machine.machine_state
-
-            coordinator = DataUpdateCoordinator(
-                        hass,
-                       _LOGGER,
-                        # Name of the data. For logging purposes.
-                        name="arizone",
-                        update_method=async_update_data,
-                        # Polling interval. Will only be polled if there are subscribers.
-                        update_interval=timedelta(seconds=10),
-                    )
-                        
-            devices = [Machine(machine, coordinator)] + [Zone(z, coordinator) for z in machine.zones]
-
-            
-
-        if system_class == 'innobus':
+            from .localapi import  LocalAPIZone as Zone                                                
+        elif system_class == 'innobus':
             from .innobus import InnobusMachine as Machine
             from .innobus import  InnobusZone as Zone
-            devices = [Machine(machine)] + [Zone(z) for z in machine.zones]
+        devices = [Machine(machine)] + [Zone(z) for z in machine.zones]
 
     _LOGGER.info("Airzone devices " + str(devices) + " " + str(len(devices)))
     return devices

@@ -22,11 +22,10 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 
-class LocalAPIZone(CoordinatorEntity, ClimateEntity):
+class LocalAPIZone(ClimateEntity):
     """Representation of a LocalAPI Zone."""
 
-    def __init__(self, airzone_zone, coordinator):
-        super().__init__(coordinator)
+    def __init__(self, airzone_zone):        
         """Initialize the device."""        
         self.airzone_zone = airzone_zone        
         _LOGGER.info("Airzone configure zone " + self._name)
@@ -147,12 +146,11 @@ class LocalAPIZone(CoordinatorEntity, ClimateEntity):
 
             
 
-class LocalAPIMachine(CoordinatorEntity, ClimateEntity):
+class LocalAPIMachine(ClimateEntity):
     """Representation of a LocalAPI Machine."""
 
-    def __init__(self, airzone_machine, coordinator):
-        """Initialize the device."""
-        super().__init__(coordinator)
+    def __init__(self, airzone_machine):
+        """Initialize the device."""        
         self._name = "Airzone Machine "  + str(airzone_machine._machine_id)
         self._fan_modes = [FAN_AUTO] + [str(n) for n in range(1, 8)]
         _LOGGER.info("Airzone configure machine " + self._name)
@@ -239,3 +237,6 @@ class LocalAPIMachine(CoordinatorEntity, ClimateEntity):
     @property
     def unique_id(self):
         return self._airzone_machine.unique_id
+
+    def update(self):
+        self._airzone_machine.retrieve_system_state()
