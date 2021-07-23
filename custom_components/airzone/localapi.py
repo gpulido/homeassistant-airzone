@@ -239,4 +239,4 @@ class LocalAPIMachine(ClimateEntity):
         return self._airzone_machine.unique_id
 
     def update(self):
-        self._airzone_machine.retrieve_system_state()
+        self._airzone_machine.retrieve_state()
