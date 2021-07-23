@@ -142,7 +142,10 @@ class LocalAPIZone(ClimateEntity):
 
     @property
     def unique_id(self):
-        return self.airzone_zone.unique_id  
+        return self.airzone_zone.unique_id
+    
+    def update(self):
+        self.airzone_zone.retrieve_zone_state()
 
             
 
@@ -232,11 +235,11 @@ class LocalAPIMachine(ClimateEntity):
     def set_hvac_mode(self, hvac_mode: str) -> None:
         """Set new target hvac mode."""
         new_op = LOCALAPI_HVAC_MODE_MAP[hvac_mode]     
-        self._airzone_machine.operation_mode = new_op            
+        self.airzone_machine.operation_mode = new_op            
 
     @property
     def unique_id(self):
-        return self._airzone_machine.unique_id
+        return self.airzone_machine.unique_id
 
     def update(self):
-        self._airzone_machine.retrieve_state()
+        self.airzone_machine.retrieve_machine_state()
