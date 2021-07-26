@@ -1,10 +1,9 @@
 # homeassistant-airzone
 Home Assistant Custom component to manage Aironze installations.
-It relays on the [python-airzone](https://pypi.org/project/python-airzone/) library to connect to a Innobus / Airzone installation.
+It relays on the [python-airzone](https://pypi.org/project/python-airzone/) library to connect to a Innobus / Airzone / LocalAPI installation.
 
-Currently it supports Innobus and Aidoo installations.
+Currently it supports Innobus, Aidoo and LocalAPI installations.
 
-The current code is compatible with the new HA Climate 1.0.
 
 ## Installation and Configuration
 
@@ -18,10 +17,10 @@ To use it in HA add it to the configuration.yml:
 ```
 climate:
   - platform: airzone
-    host: ip_of_airzone_gateway 
-    port: 5020
-    device_id: 1 # the Innobus machine address id / Aidoo slave id
-    device_class: 'innobus' # 'aido' for the aidoo integration
+    host: ip_of_airzone_gateway / localapi address
+    port: 5020 # the aizone port for modbus or localapi
+    device_id: 1 # the Innobus machine address id / Aidoo slave id / LocalAPI system id
+    device_class: 'innobus' # 'aido' for the aidoo integration / LocalAPI for localapi 
 ```
 
 ### 2) Integrations menu
@@ -35,9 +34,9 @@ Goto configuration -> Integrations -> Add integration
 For a proper configuration of the gateway please take a look to the [python-airzone](https://pypi.org/project/python-airzone/) library.
 
 
-## Innobus
+## Innobus / LocalAPI
 
-Given an Innobus MachineID, this component  discover automatically the Zones associated to them. 
+Given an Innobus MachineID or LocalAPI systemID, this component  discover automatically the Zones associated to them. 
 As HA doesn't provide (yet) a proper generic way to handle multiroom / multizones HVAC with a centralized machine, this component creates a climate device for each Machine that interfaces with the Machine state (STOP-AIR-COOL-HOT-HOTPLUS etc...) and a climate device for each of the zones to control them.
 
 Example of climate card as Innobus Machine: 
@@ -49,5 +48,7 @@ Example of climate card as Innobus Zone:
 ![alt text](screenshots/innobus_zone.png?raw=true "Innobus Zone")
 
 Ideally each zone would include the machine control (that is global to all zones on the machine) to avoid having two climate devices for each zone / group.
+
+
 
 
