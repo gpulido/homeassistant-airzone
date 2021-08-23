@@ -83,13 +83,15 @@ LOCALAPI_MACHINE_HVAC_MODES = [HVAC_MODE_OFF,
                             HVAC_MODE_DRY,
                             HVAC_MODE_AUTO] 
 
+from airzone.localapi import OperationMode
+
 LOCALAPI_HVAC_MODE_MAP = {
-    HVAC_MODE_OFF:'STOP',
-    HVAC_MODE_COOL:'COOLING',    
-    HVAC_MODE_HEAT:'HEATING',
-    HVAC_MODE_FAN_ONLY:'FAN',
-    HVAC_MODE_DRY:'DRY',
-    HVAC_MODE_AUTO:'AUTO',
+    HVAC_MODE_OFF: OperationMode.STOP,
+    HVAC_MODE_COOL: OperationMode.COOLING,
+    HVAC_MODE_HEAT: OperationMode.HEATING,
+    HVAC_MODE_FAN_ONLY: OperationMode.FAN,
+    HVAC_MODE_DRY: OperationMode.DRY,
+    HVAC_MODE_AUTO: OperationMode.AUTO
 }
 
 LOCALAPI_MODE_TO_HVAC_MAP = {
