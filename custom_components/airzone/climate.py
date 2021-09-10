@@ -47,14 +47,20 @@ async def async_get_devices(config, hass):
     if system_class == 'aidoo':
         from .aidoo import Aidoo as Machine
         devices = [Machine(machine)]
-    else:
+    else:        
+        # TODO: Review to unify the innobus and localapi management
         if system_class == 'localapi':
-            from .localapi import LocalAPIMachine as Machine
-            from .localapi import  LocalAPIZone as Zone                                                
+            if len(machine.zones) == 1:
+                from .localapi import LocalAPIOneZone as Machine
+                devices = [Machine(machine)]
+            else:
+                from .localapi import LocalAPIMachine as Machine
+                from .localapi import  LocalAPIZone as Zone
+                devices = [Machine(machine)] + [Zone(z) for z in machine.zones]                                
         elif system_class == 'innobus':
             from .innobus import InnobusMachine as Machine
             from .innobus import  InnobusZone as Zone
-        devices = [Machine(machine)] + [Zone(z) for z in machine.zones]
+            devices = [Machine(machine)] + [Zone(z) for z in machine.zones]
 
     _LOGGER.info("Airzone devices " + str(devices) + " " + str(len(devices)))
     return devices
