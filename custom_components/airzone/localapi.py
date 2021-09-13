@@ -267,7 +267,7 @@ class LocalAPIOneZone(ClimateEntity):
         self._units = TEMP_CELSIUS
         if value.units == TempUnits.FAHRENHEIT:
             self._units = TEMP_FAHRENHEIT
-        # We can access directly to the only zone available 
+        # We can access directly to the only zone available        
         temp_z = [z for z in value.zones]       
         self.airzone_zone = temp_z[0]
         # If there is more than one zone, log it
@@ -311,7 +311,10 @@ class LocalAPIOneZone(ClimateEntity):
     def hvac_mode(self) -> str:
         """Return hvac operation ie. heat, cool mode.
         Need to be one of HVAC_MODE_*.
-        """           
+        """
+        if not self.airzone_zone.is_on():
+            return HVAC_MODE_OFF
+                    
         current_op = self.airzone_machine.operation_mode.name
         return LOCALAPI_MODE_TO_HVAC_MAP[current_op]         
 
@@ -325,6 +328,11 @@ class LocalAPIOneZone(ClimateEntity):
 
     def set_hvac_mode(self, hvac_mode: str) -> None:
         """Set new target hvac mode."""
+        if hvac_mode == HVAC_MODE_OFF:
+            self.turn_off()
+            return
+        if not self.airzone_zone.is_on():
+            self.turn_on()
         new_op = LOCALAPI_HVAC_MODE_MAP[hvac_mode]     
         self.airzone_machine.operation_mode = new_op    
     
