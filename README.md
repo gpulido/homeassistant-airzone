@@ -1,5 +1,5 @@
 # homeassistant-airzone
-Home Assistant Custom component to manage Aironze installations.
+Home Assistant Custom component to manage Airzone installations.
 It relays on the [python-airzone](https://pypi.org/project/python-airzone/) library to connect to a Innobus / Airzone / LocalAPI installation.
 
 Currently it supports Innobus, Aidoo and LocalAPI installations.
