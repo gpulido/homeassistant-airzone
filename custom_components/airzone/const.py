@@ -4,6 +4,7 @@ DEFAULT_DEVICE_CLASS = 'innobus'
 DEFAULT_SPEED_AS_PER = False
 SYSTEM_TYPES = ["innobus", "aido", "localapi"]
 
+from airzone.localapi import OperationMode
 from homeassistant.components.climate.const import (
     FAN_AUTO,
     FAN_HIGH,
@@ -83,7 +84,6 @@ LOCALAPI_MACHINE_HVAC_MODES = [HVAC_MODE_OFF,
                             HVAC_MODE_DRY,
                             HVAC_MODE_AUTO] 
 
-from airzone.localapi import OperationMode
 
 LOCALAPI_HVAC_MODE_MAP = {
     HVAC_MODE_OFF: OperationMode.STOP,
@@ -109,7 +109,12 @@ LOCALAPI_MODE_TO_HVAC_MAP = {
 
 CONF_SPEED_PERCENTAGE = "speed_as_percentage"
 
-AIDO_HVAC_MODES = [HVAC_MODE_AUTO, HVAC_MODE_FAN_ONLY, HVAC_MODE_HEAT, HVAC_MODE_COOL, HVAC_MODE_OFF, HVAC_MODE_DRY]
+AIDO_HVAC_MODES = [HVAC_MODE_AUTO, 
+                HVAC_MODE_FAN_ONLY, 
+                HVAC_MODE_HEAT, 
+                HVAC_MODE_COOL, 
+                HVAC_MODE_OFF, 
+                HVAC_MODE_DRY]
 
 #TODO: SWING_MODES =Louvres?
 AIDO_SUPPORT_FLAGS = SUPPORT_TARGET_TEMPERATURE | SUPPORT_FAN_MODE
