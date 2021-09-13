@@ -268,7 +268,7 @@ class LocalAPIOneZone(ClimateEntity):
         if value.units == TempUnits.FAHRENHEIT:
             self._units = TEMP_FAHRENHEIT
         # We can access directly to the only zone available        
-        self.airzone_zone = list(value.zones.values())[0]
+        self.airzone_zone = value.zones[0]
         # If there is more than one zone, log it
         if len(value.zones) > 1:
             _LOGGER.warning("There is more than one zone in this System")
