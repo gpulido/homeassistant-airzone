@@ -250,6 +250,7 @@ class LocalAPIOneZone(ClimateEntity):
 
     def __init__(self, airzone_machine):
         super().__init__()
+        self._name = "Airzone Machine "  + str(airzone_machine._machine_id)
         self._fan_modes = [FAN_AUTO] + [str(n) for n in range(1, 8)]                        
         self.airzone_machine = airzone_machine          
         _LOGGER.info("LocalAPI configure machine " + self._name)        
@@ -261,8 +262,7 @@ class LocalAPIOneZone(ClimateEntity):
     
     @airzone_machine.setter
     def airzone_machine(self, value):
-        self._airzone_machine = value
-        self._name = value.name       
+        self._airzone_machine = value        
         from airzone.localapi import TempUnits
         self._units = TEMP_CELSIUS
         if value.units == TempUnits.FAHRENHEIT:
@@ -278,8 +278,9 @@ class LocalAPIOneZone(ClimateEntity):
         return self._airzone_zone
 
     @airzone_zone.setter
-    def airzone_zone(self, value):
+    def airzone_zone(self, value):        
         self._airzone_zone = value
+        self._name = value.name       
 
     @property
     def name(self):
