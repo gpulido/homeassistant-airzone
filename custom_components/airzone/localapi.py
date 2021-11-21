@@ -145,7 +145,9 @@ class LocalAPIZone(ClimateEntity):
         return self.airzone_zone.unique_id
     
     def update(self):
-        self.airzone_zone.retrieve_zone_state()
+        # The update has already being done by the machine
+        pass
+        #self.airzone_zone.retrieve_zone_state()
 
             
 
@@ -241,8 +243,8 @@ class LocalAPIMachine(ClimateEntity):
     def unique_id(self):
         return self.airzone_machine.unique_id
 
-    def update(self):
-        self.airzone_machine.retrieve_machine_state()
+    def update(self):                
+        self.airzone_machine.retrieve_machine_state(True)
 
 
 class LocalAPIOneZone(ClimateEntity):
@@ -394,5 +396,5 @@ class LocalAPIOneZone(ClimateEntity):
 
     def update(self):
         # TODO: review if only one update is needed
-        self.airzone_machine.retrieve_machine_state()        
-        self.airzone_zone.retrieve_zone_state()
+        self.airzone_machine.retrieve_machine_state(True)        
+        #self.airzone_zone.retrieve_zone_state()
