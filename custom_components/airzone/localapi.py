@@ -102,10 +102,10 @@ class LocalAPIZone(ClimateEntity):
         """Return the current running hvac operation."""    
         op_mode = self.airzone_zone.machine.operation_mode.name
 
-        if self.airzone_zone.floor_demand():
+        if self.airzone_zone.floor_demand:
             return CURRENT_HVAC_HEAT
 
-        if self.airzone_zone.air_demand():        
+        if self.airzone_zone.air_demand:        
             if op_mode == 'HEATING':
                 return CURRENT_HVAC_HEAT
             return CURRENT_HVAC_COOL
@@ -347,10 +347,10 @@ class LocalAPIOneZone(ClimateEntity):
         """Return the current running hvac operation."""    
         op_mode = self.airzone_machine.operation_mode.name
 
-        if self.airzone_zone.floor_demand():
+        if self.airzone_zone.floor_demand:
             return CURRENT_HVAC_HEAT
 
-        if self.airzone_zone.air_demand():        
+        if self.airzone_zone.air_demand:        
             if op_mode == 'HEATING':
                 return CURRENT_HVAC_HEAT
             return CURRENT_HVAC_COOL
