@@ -95,24 +95,21 @@ class LocalAPIZone(ClimateEntity):
 
         elif hvac_mode == HVAC_MODE_HEAT_COOL:
             self.airzone_zone.turn_on()
-
-    #TODO: review if we can extract running hvac
+            
     @property
     def hvac_action(self) -> Optional[str]:
         """Return the current running hvac operation."""    
-        op_mode = self.airzone_zone.machine.operation_mode.name
-
-        if self.airzone_zone.floor_demand:
-            return CURRENT_HVAC_HEAT
-
-        if self.airzone_zone.air_demand:        
+        op_mode = self.airzone_machine.operation_mode.name
+         
+        if self.airzone_zone.floor_demand == 1 or self.airzone_zone.air_demand == 1:
             if op_mode == 'HEATING':
                 return CURRENT_HVAC_HEAT
-            return CURRENT_HVAC_COOL
-
+            if op_mode == 'COOLING':
+                return CURRENT_HVAC_COOL
+            
         if op_mode == 'STOP':
             return CURRENT_HVAC_OFF
-        return CURRENT_HVAC_IDLE
+        return CURRENT_HVAC_IDLE 
 
 
     @property
@@ -346,15 +343,13 @@ class LocalAPIOneZone(ClimateEntity):
     def hvac_action(self) -> Optional[str]:
         """Return the current running hvac operation."""    
         op_mode = self.airzone_machine.operation_mode.name
-
-        if self.airzone_zone.floor_demand:
-            return CURRENT_HVAC_HEAT
-
-        if self.airzone_zone.air_demand:        
+         
+        if self.airzone_zone.floor_demand == 1 or self.airzone_zone.air_demand == 1:
             if op_mode == 'HEATING':
                 return CURRENT_HVAC_HEAT
-            return CURRENT_HVAC_COOL
-
+            if op_mode == 'COOLING':
+                return CURRENT_HVAC_COOL
+            
         if op_mode == 'STOP':
             return CURRENT_HVAC_OFF
         return CURRENT_HVAC_IDLE   
