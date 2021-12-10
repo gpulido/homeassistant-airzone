@@ -99,7 +99,7 @@ class LocalAPIZone(ClimateEntity):
     @property
     def hvac_action(self) -> Optional[str]:
         """Return the current running hvac operation."""    
-        op_mode = self.airzone_machine.machine.operation_mode.name
+        op_mode = self.airzone_zone.machine.operation_mode.name
          
         if self.airzone_zone.floor_demand == 1 or self.airzone_zone.air_demand == 1:
             if op_mode == 'HEATING':
