@@ -3,6 +3,10 @@ from typing import List, Optional
 
 from homeassistant.components.climate import ClimateEntity
 from homeassistant.components.climate.const import (
+    CURRENT_HVAC_COOL,
+    CURRENT_HVAC_HEAT,
+    CURRENT_HVAC_IDLE,
+    CURRENT_HVAC_OFF,
     FAN_AUTO,
     HVAC_MODE_HEAT_COOL,
     HVAC_MODE_OFF,
@@ -91,24 +95,21 @@ class LocalAPIZone(ClimateEntity):
 
         elif hvac_mode == HVAC_MODE_HEAT_COOL:
             self.airzone_zone.turn_on()
-
-    #TODO: review if we can extract running hvac
-    # @property
-    # def hvac_action(self) -> Optional[str]:
-    #     """Return the current running hvac operation."""    
-    #     op_mode = self._airzone_zone._machine.get_operation_mode().name
-
-    #     if self._airzone_zone.is_floor_active():
-    #         return CURRENT_HVAC_HEAT
-
-    #     if self._airzone_zone.is_requesting_air():
-    #         if op_mode == 'HOT_AIR':
-    #             return CURRENT_HVAC_HEAT
-    #         return CURRENT_HVAC_COOL
-
-    #     if op_mode == 'STOP':
-    #         return CURRENT_HVAC_OFF
-    #     return CURRENT_HVAC_IDLE
+            
+    @property
+    def hvac_action(self) -> Optional[str]:
+        """Return the current running hvac operation."""    
+        op_mode = self.airzone_zone.machine.operation_mode.name
+         
+        if self.airzone_zone.floor_demand == 1 or self.airzone_zone.air_demand == 1:
+            if op_mode == 'HEATING':
+                return CURRENT_HVAC_HEAT
+            if op_mode == 'COOLING':
+                return CURRENT_HVAC_COOL
+            
+        if op_mode == 'STOP':
+            return CURRENT_HVAC_OFF
+        return CURRENT_HVAC_IDLE 
 
 
     @property
@@ -336,7 +337,22 @@ class LocalAPIOneZone(ClimateEntity):
         if not self.airzone_zone.is_on():
             self.turn_on()
         new_op = LOCALAPI_HVAC_MODE_MAP[hvac_mode]     
-        self.airzone_machine.operation_mode = new_op    
+        self.airzone_machine.operation_mode = new_op
+
+    @property
+    def hvac_action(self) -> Optional[str]:
+        """Return the current running hvac operation."""    
+        op_mode = self.airzone_machine.operation_mode.name
+         
+        if self.airzone_zone.floor_demand == 1 or self.airzone_zone.air_demand == 1:
+            if op_mode == 'HEATING':
+                return CURRENT_HVAC_HEAT
+            if op_mode == 'COOLING':
+                return CURRENT_HVAC_COOL
+            
+        if op_mode == 'STOP':
+            return CURRENT_HVAC_OFF
+        return CURRENT_HVAC_IDLE   
     
     
     @property
