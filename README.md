@@ -33,7 +33,7 @@ climate:
     host: ip_of_airzone_gateway / localapi address
     port: 5020 # the aizone port for modbus or localapi
     device_id: 1 # the Innobus machine address id / Aidoo slave id / LocalAPI system id
-    device_class: 'innobus' # 'aido' for the aidoo integration / 'localapi' for localapi 
+    device_class: 'innobus' # 'aidoo' for the aidoo integration / 'localapi' for localapi 
 ```
 
 ## Innobus / LocalAPI
