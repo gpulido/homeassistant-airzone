@@ -2,7 +2,7 @@ DOMAIN = "airzone"
 DEFAULT_DEVICE_ID = 1
 DEFAULT_DEVICE_CLASS = 'innobus'
 DEFAULT_SPEED_AS_PER = False
-SYSTEM_TYPES = ["innobus", "aidoo", "localapi"]
+SYSTEM_TYPES = ["innobus", "aidoo", "localapi", "airzone_cloud"]
 
 from airzone.localapi import OperationMode
 from homeassistant.components.climate.const import (

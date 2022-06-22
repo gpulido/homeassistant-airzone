@@ -1,18 +1,34 @@
 {
     "config": {
         "error": {
-            "connection": "Cannot connect with airzone machine"
-          },
+            "connection": "Cannot connect with airzone TCP modbus"
+        },
         "step": {
-            "user": {
+            "user":  {
+                "data": {
+                    "device_class": "Type of device"
+                },
+                "description": "Select type of device.",
+                "title": "Configuration"
+            },
+            "local": {
                 "data": {
                     "host": "The ip / host where the system is listening",
                     "port": "port",
-                    "device_id": "Device Id",
-                    "device_class": "Class",
-                    "speed_as_percentage": "The speed is a percentage (only for Aido)"                    
+                    "device_id": "Device Id"
                 },
                 "description": "Enter your Airzone config.",
+                "title": "Configuration"
+            },
+            "cloud": {
+                "data": {
+                    "email": "User email",
+                    "password": "Password",
+                    "entity_id": "Installation number",
+                    "id": "Group number",
+                    "device_id": "Device number"
+                },
+                "description": "Enter your Airzone Cloud config.",
                 "title": "Configuration"
             }
         }
