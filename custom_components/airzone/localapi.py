@@ -77,7 +77,7 @@ class LocalAPIZone(ClimateEntity):
         Need to be one of HVAC_MODE_*.
         """
         if self.airzone_zone.is_on():            
-        	return HVAC_MODE_HEAT_COOL
+            return HVAC_MODE_HEAT_COOL  
         else:
             return HVAC_MODE_OFF
 
