@@ -192,14 +192,6 @@ class InnobusZone(ClimateEntity):
         self._airzone_zone.set_speed_selection(ZONE_FAN_MODES[fan_mode])
 
     @property
-    def min_temp(self):
-        return self._airzone_zone.min_temp
-
-    @property
-    def max_temp(self):
-        return self._airzone_zone.max_temp
-
-    @property
     def unique_id(self):
         return self._airzone_zone.unique_id
 
@@ -209,6 +201,8 @@ class InnobusZone(ClimateEntity):
         self._state_attrs.update(
                 {key: self._extract_value_from_attribute(self._airzone_zone, value) for
                  key, value in self._available_attributes.items()})
+        self._attr_max_temp = self._airzone_zone.max_temp
+        self._attr_min_temp = self._airzone_zone.min_temp
         _LOGGER.debug(str(self._airzone_zone))
 
     @staticmethod
