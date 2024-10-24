@@ -8,6 +8,6 @@
   "requirements": [
     "python-airzone==0.15.1"    
   ],
-  "version": "1.6.1",
+  "version": "1.7.0",
   "iot_class": "local_polling"
 }

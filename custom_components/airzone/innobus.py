@@ -24,6 +24,7 @@ from .const import (
     MACHINE_PRESET_MODES,
     MACHINE_SUPPORT_FLAGS,
     PRESET_AIR_MODE,
+    PRESET_COMBINED_MODE,
     PRESET_FLOOR_MODE,
     PRESET_SLEEP,
     ZONE_FAN_MODES,
@@ -278,7 +279,7 @@ class InnobusMachine(ClimateEntity):
             self._airzone_machine.operation_mode = 'AIR'
             return
         if hvac_mode == HVAC_MODE_HEAT:
-            if self.is_aux_heat:
+            if self.preset_mode == PRESET_COMBINED_MODE:
                 self._airzone_machine.operation_mode = 'HOTPLUS'
                 return
             if self.preset_mode == PRESET_AIR_MODE:
@@ -297,6 +298,8 @@ class InnobusMachine(ClimateEntity):
         current_op = self._airzone_machine.operation_mode.name
         if current_op == 'HOT_AIR':
             return PRESET_AIR_MODE
+        if current_op == 'HOTPLUS':
+            return PRESET_COMBINED_MODE
         else:
             return PRESET_FLOOR_MODE
 
@@ -310,31 +313,14 @@ class InnobusMachine(ClimateEntity):
     def set_preset_mode(self, preset_mode: str) -> None:
         """Set new preset mode."""
         if self.hvac_mode == HVAC_MODE_HEAT:
-
             if preset_mode == PRESET_FLOOR_MODE:
                 self._airzone_machine.operation_mode = 'HOT'
                 return
             if preset_mode == PRESET_AIR_MODE:
                 self._airzone_machine.operation_mode = 'HOT_AIR'
                 return
-
-    def turn_aux_heat_on(self) -> None:
-        """Turn auxiliary heater on."""
-        self._airzone_machine.operation_mode = 'HOTPLUS'
-
-    def turn_aux_heat_off(self) -> None:
-        """Turn auxiliary heater on."""
-        if self.preset_mode == PRESET_AIR_MODE:
-            self._airzone_machine.operation_mode = 'AIR'
-        elif self.preset_mode == PRESET_FLOOR_MODE:
-            self._airzone_machine.operation_mode = 'HOT'
-
-    @property
-    def is_aux_heat(self) -> Optional[bool]:
-        """Return true if aux heater.
-        Requires SUPPORT_AUX_HEAT.
-        """
-        return self._airzone_machine.operation_mode.name == 'HOTPLUS'
+            if preset_mode == PRESET_COMBINED_MODE:
+                self._airzone_machine.operation_mode = 'HOTPLUS'
 
     @property
     def unique_id(self):
