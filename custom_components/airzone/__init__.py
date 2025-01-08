@@ -1,7 +1,7 @@
 """Airzone Custom Component."""
 from homeassistant import config_entries, core
 
-from .const import DOMAIN
+from .const import DOMAIN, PLATFORMS
 
 
 async def async_setup_entry(
@@ -13,9 +13,8 @@ async def async_setup_entry(
     hass.data[DOMAIN][entry.entry_id] = entry.data
 
     # Forward the setup to the climate platform.
-    hass.async_create_task(
-        hass.config_entries.async_forward_entry_setup(entry, "climate")
-    )
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    
     return True
 
 async def async_setup(hass: core.HomeAssistant, config: dict) -> bool:

@@ -2,21 +2,14 @@ from enum import Enum
 import logging
 from typing import List, Optional
 
-from homeassistant.components.climate import ClimateEntity
-from homeassistant.components.climate.const import (
-    CURRENT_HVAC_COOL,
-    CURRENT_HVAC_HEAT,
-    CURRENT_HVAC_IDLE,
-    CURRENT_HVAC_OFF,
-    HVAC_MODE_AUTO,
-    HVAC_MODE_COOL,
-    HVAC_MODE_FAN_ONLY,
-    HVAC_MODE_HEAT,
-    HVAC_MODE_HEAT_COOL,
-    HVAC_MODE_OFF,
+from homeassistant.components.climate import (
     PRESET_NONE,
+    ClimateEntity,
+    ClimateEntityFeature,
+    HVACAction,
+    HVACMode,
 )
-from homeassistant.const import ATTR_TEMPERATURE, TEMP_CELSIUS
+from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 
 from .const import (
     AVAILABLE_ATTRIBUTES_ZONE,
@@ -69,7 +62,7 @@ class InnobusZone(ClimateEntity):
     @property
     def temperature_unit(self):
         """Return the unit of measurement that is used."""
-        return TEMP_CELSIUS
+        return UnitOfTemperature.CELSIUS 
 
 
     def turn_on(self):
@@ -81,57 +74,57 @@ class InnobusZone(ClimateEntity):
         self._airzone_zone.turn_off()
 
     @property
-    def hvac_mode(self) -> str:
+    def hvac_mode(self) -> HVACMode:
         """Return hvac operation ie. heat, cool mode.
         Need to be one of HVAC_MODE_*.
         """
         tacto_on =  bool(self._airzone_zone.is_tacto_on())
         auto_on = bool(self._airzone_zone.is_automatic_mode())
         if tacto_on and auto_on:
-            return HVAC_MODE_AUTO
+            return HVACMode.AUTO
         elif tacto_on and not auto_on:
-        	return HVAC_MODE_HEAT_COOL
+            return HVACMode.HEAT_COOL
         else:
-            return HVAC_MODE_OFF
+            return HVACMode.OFF
 
     @property
-    def hvac_modes(self) -> List[str]:
+    def hvac_modes(self) -> list[HVACMode]:
         """Return the list of available hvac operation modes.
         Need to be a subset of HVAC_MODES.
         """
         return ZONE_HVAC_MODES
 
-    def set_hvac_mode(self, hvac_mode: str) -> None:
+    def set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         """Set new target hvac mode."""
-        if hvac_mode == HVAC_MODE_OFF:
+        if hvac_mode == HVACMode.OFF:
             self._airzone_zone.turnoff_tacto()
 
-        elif hvac_mode == HVAC_MODE_HEAT_COOL:
+        elif hvac_mode == HVACMode.HEAT_COOL:
             self._airzone_zone.turnoff_automatic_mode()
             self._airzone_zone.retrieve_zone_state()
             self._airzone_zone.turnon_tacto()
 
-        elif hvac_mode == HVAC_MODE_AUTO:
+        elif hvac_mode == HVACMode.AUTO:
             self._airzone_zone.turnon_automatic_mode()
             self._airzone_zone.retrieve_zone_state()
             self._airzone_zone.turnon_tacto()
 
     @property
-    def hvac_action(self) -> Optional[str]:
+    def hvac_action(self) -> HVACAction | None:
         """Return the current running hvac operation."""
         op_mode = self._airzone_zone._machine.operation_mode.name
 
         if self._airzone_zone.is_floor_active():
-            return CURRENT_HVAC_HEAT
+            return HVACAction.HEATING
 
         if self._airzone_zone.is_requesting_air():
             if op_mode == 'HOT_AIR':
-                return CURRENT_HVAC_HEAT
-            return CURRENT_HVAC_COOL
+                return HVACAction.HEATING
+            return HVACAction.COOLING
 
         if op_mode == 'STOP':
-            return CURRENT_HVAC_OFF
-        return CURRENT_HVAC_IDLE
+            return HVACAction.OFF
+        return HVACAction.IDLE
 
 
     @property
@@ -236,43 +229,43 @@ class InnobusMachine(ClimateEntity):
     @property
     def temperature_unit(self):
         """Return the unit of measurement that is used."""
-        return TEMP_CELSIUS
+        return UnitOfTemperature.CELSIUS 
 
     @property
-    def hvac_mode(self) -> str:
+    def hvac_mode(self) -> HVACMode:
         """Return hvac operation ie. heat, cool mode.
         Need to be one of HVAC_MODE_*.
         """
         from airzone.innobus import OperationMode
         current_op = self._airzone_machine.operation_mode
         if current_op in [OperationMode.HOT, OperationMode.HOT_AIR, OperationMode.HOTPLUS]:
-            return HVAC_MODE_HEAT
+            return HVACMode.HEAT
         if current_op == OperationMode.COLD:
-            return HVAC_MODE_COOL
+            return HVACMode.COOL
         if current_op == OperationMode.AIR:
-            return HVAC_MODE_FAN_ONLY
-        return HVAC_MODE_OFF
+            return HVACMode.FAN_ONLY
+        return HVACMode.OFF
 
 
     @property
-    def hvac_modes(self) -> List[str]:
+    def hvac_modes(self) -> list[HVACMode]:
         """Return the list of available hvac operation modes.
         Need to be a subset of HVAC_MODES.
         """
         return MACHINE_HVAC_MODES
 
-    def set_hvac_mode(self, hvac_mode: str) -> None:
+    def set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         """Set new target hvac mode."""
-        if hvac_mode == HVAC_MODE_OFF:
+        if hvac_mode == HVACMode.OFF:
             self._airzone_machine.operation_mode = 'STOP'
             return
-        if hvac_mode == HVAC_MODE_COOL:
+        if hvac_mode == HVACMode.COOL:
             self._airzone_machine.operation_mode = 'COLD'
             return
-        if hvac_mode == HVAC_MODE_FAN_ONLY:
+        if hvac_mode == HVACMode.FAN_ONLY:
             self._airzone_machine.operation_mode = 'AIR'
             return
-        if hvac_mode == HVAC_MODE_HEAT:
+        if hvac_mode == HVACMode.HEAT:
             if self.preset_mode == PRESET_COMBINED_MODE:
                 self._airzone_machine.operation_mode = 'HOTPLUS'
                 return
@@ -306,7 +299,7 @@ class InnobusMachine(ClimateEntity):
 
     def set_preset_mode(self, preset_mode: str) -> None:
         """Set new preset mode."""
-        if self.hvac_mode == HVAC_MODE_HEAT:
+        if self.hvac_mode == HVACMode.HEAT:
             if preset_mode == PRESET_FLOOR_MODE:
                 self._airzone_machine.operation_mode = 'HOT'
                 return

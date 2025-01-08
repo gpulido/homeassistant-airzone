@@ -1,18 +1,13 @@
 import logging
 from typing import List, Optional
 
-from homeassistant.components.climate import ClimateEntity
-from homeassistant.components.climate.const import (
-    CURRENT_HVAC_COOL,
-    CURRENT_HVAC_HEAT,
-    CURRENT_HVAC_IDLE,
-    CURRENT_HVAC_OFF,
+from homeassistant.components.climate import (
     FAN_AUTO,
-    HVAC_MODE_HEAT_COOL,
-    HVAC_MODE_OFF,
+    ClimateEntity,
+    HVACAction,
+    HVACMode,
 )
-from homeassistant.const import ATTR_TEMPERATURE, TEMP_CELSIUS, TEMP_FAHRENHEIT
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 
 from .const import (
     LOCALAPI_HVAC_MODE_MAP,
@@ -44,9 +39,9 @@ class LocalAPIZone(ClimateEntity):
         self._airzone_zone = value
         self._name = value.name
         from airzone.localapi import TempUnits
-        self._units = TEMP_CELSIUS
+        self._units = UnitOfTemperature.CELSIUS 
         if value.units == TempUnits.FAHRENHEIT:
-            self._units = TEMP_FAHRENHEIT        
+            self._units = UnitOfTemperature.FAHRENHEIT        
 
     @property
     def name(self):
@@ -72,44 +67,44 @@ class LocalAPIZone(ClimateEntity):
         self.airzone_zone.turn_off()
 
     @property
-    def hvac_mode(self) -> str:
+    def hvac_mode(self) -> HVACMode:
         """Return hvac operation ie. heat, cool mode.
         Need to be one of HVAC_MODE_*.
         """
         if self.airzone_zone.is_on():            
-            return HVAC_MODE_HEAT_COOL  
+            return HVACMode.HEAT_COOL  
         else:
-            return HVAC_MODE_OFF
+            return HVACMode.OFF
 
     @property
-    def hvac_modes(self) -> List[str]:
+    def hvac_modes(self) -> List[HVACMode]:
         """Return the list of available hvac operation modes.
         Need to be a subset of HVAC_MODES.
         """
         return LOCALAPI_ZONE_HVAC_MODES
 
-    def set_hvac_mode(self, hvac_mode: str) -> None:
+    def set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         """Set new target hvac mode."""
-        if hvac_mode == HVAC_MODE_OFF:
+        if hvac_mode == HVACMode.OFF:
             self.airzone_zone.turn_off()
 
-        elif hvac_mode == HVAC_MODE_HEAT_COOL:
+        elif hvac_mode == HVACMode.HEAT_COOL:
             self.airzone_zone.turn_on()
             
     @property
-    def hvac_action(self) -> Optional[str]:
+    def hvac_action(self) -> Optional[HVACAction]:
         """Return the current running hvac operation."""    
         op_mode = self.airzone_zone.machine.operation_mode.name
          
         if self.airzone_zone.floor_demand == 1 or self.airzone_zone.air_demand == 1:
             if op_mode == 'HEATING':
-                return CURRENT_HVAC_HEAT
+                return HVACAction.HEATING
             if op_mode == 'COOLING':
-                return CURRENT_HVAC_COOL
+                return HVACAction.COOLING
             
         if op_mode == 'STOP':
-            return CURRENT_HVAC_OFF
-        return CURRENT_HVAC_IDLE 
+            return HVACAction.OFF
+        return HVACAction.IDLE 
 
 
     @property
@@ -170,9 +165,9 @@ class LocalAPIMachine(ClimateEntity):
     def airzone_machine(self, value):
         self._airzone_machine = value        
         from airzone.localapi import TempUnits
-        self._units = TEMP_CELSIUS
+        self._units = UnitOfTemperature.CELSIUS 
         if value.units == TempUnits.FAHRENHEIT:
-            self._units = TEMP_FAHRENHEIT
+            self._units = UnitOfTemperature.FAHRENHEIT
 
     
     @property
@@ -221,7 +216,7 @@ class LocalAPIMachine(ClimateEntity):
 
 
     @property
-    def hvac_mode(self) -> str:
+    def hvac_mode(self) -> HVACMode:
         """Return hvac operation ie. heat, cool mode.
         Need to be one of HVAC_MODE_*.
         """        
@@ -229,13 +224,13 @@ class LocalAPIMachine(ClimateEntity):
         return LOCALAPI_MODE_TO_HVAC_MAP[current_op]        
 
     @property
-    def hvac_modes(self) -> List[str]:
+    def hvac_modes(self) -> List[HVACMode]:
         """Return the list of available hvac operation modes.
         Need to be a subset of HVAC_MODES.
         """
         return LOCALAPI_MACHINE_HVAC_MODES
 
-    def set_hvac_mode(self, hvac_mode: str) -> None:
+    def set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         """Set new target hvac mode."""
         new_op = LOCALAPI_HVAC_MODE_MAP[hvac_mode]     
         self.airzone_machine.operation_mode = new_op            
@@ -267,9 +262,9 @@ class LocalAPIOneZone(ClimateEntity):
     def airzone_machine(self, value):
         self._airzone_machine = value        
         from airzone.localapi import TempUnits
-        self._units = TEMP_CELSIUS
+        self._units = UnitOfTemperature.CELSIUS 
         if value.units == TempUnits.FAHRENHEIT:
-            self._units = TEMP_FAHRENHEIT
+            self._units = UnitOfTemperature.FAHRENHEIT
         # We can access directly to the only zone available        
         temp_z = [z for z in value.zones]       
         self.airzone_zone = temp_z[0]
@@ -311,27 +306,27 @@ class LocalAPIOneZone(ClimateEntity):
         self._airzone_zone.turn_off()
 
     @property
-    def hvac_mode(self) -> str:
+    def hvac_mode(self) -> HVACMode:
         """Return hvac operation ie. heat, cool mode.
         Need to be one of HVAC_MODE_*.
         """
         if not self.airzone_zone.is_on():
-            return HVAC_MODE_OFF
+            return HVACMode.OFF
                     
         current_op = self.airzone_machine.operation_mode.name
         return LOCALAPI_MODE_TO_HVAC_MAP[current_op]         
 
 
     @property
-    def hvac_modes(self) -> List[str]:
+    def hvac_modes(self) -> List[HVACMode]:
         """Return the list of available hvac operation modes.
         Need to be a subset of HVAC_MODES.
         """        
         return LOCALAPI_MACHINE_HVAC_MODES
 
-    def set_hvac_mode(self, hvac_mode: str) -> None:
+    def set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         """Set new target hvac mode."""
-        if hvac_mode == HVAC_MODE_OFF:
+        if hvac_mode == HVACMode.OFF:
             self.turn_off()
             return
         if not self.airzone_zone.is_on():
@@ -340,19 +335,19 @@ class LocalAPIOneZone(ClimateEntity):
         self.airzone_machine.operation_mode = new_op
 
     @property
-    def hvac_action(self) -> Optional[str]:
+    def hvac_action(self) -> Optional[HVACAction]:
         """Return the current running hvac operation."""    
         op_mode = self.airzone_machine.operation_mode.name
          
         if self.airzone_zone.floor_demand == 1 or self.airzone_zone.air_demand == 1:
             if op_mode == 'HEATING':
-                return CURRENT_HVAC_HEAT
+                return HVACAction.HEATING
             if op_mode == 'COOLING':
-                return CURRENT_HVAC_COOL
+                return HVACAction.COOLING
             
         if op_mode == 'STOP':
-            return CURRENT_HVAC_OFF
-        return CURRENT_HVAC_IDLE   
+            return HVACAction.OFF
+        return HVACAction.IDLE   
     
     
     @property

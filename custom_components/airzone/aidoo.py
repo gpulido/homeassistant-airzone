@@ -1,9 +1,8 @@
 import logging
 from typing import List, Optional
 
-from homeassistant.components.climate import ClimateEntity
-from homeassistant.components.climate.const import FAN_AUTO, HVAC_MODE_OFF
-from homeassistant.const import ATTR_TEMPERATURE, TEMP_CELSIUS
+from homeassistant.components.climate import FAN_AUTO, ClimateEntity, HVACMode
+from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 
 from .const import (
     AIDO_HVAC_MODE_MAP,
@@ -39,10 +38,11 @@ class Aidoo(ClimateEntity):
         """Return the list of supported features."""        
         return AIDO_SUPPORT_FLAGS
 
+
     @property
     def temperature_unit(self):
         """Return the unit of measurement that is used."""
-        return TEMP_CELSIUS
+        return UnitOfTemperature.CELSIUS 
 
     def turn_on(self):
         """Turn on."""
@@ -53,27 +53,27 @@ class Aidoo(ClimateEntity):
         self._airzone_aidoo.turn_off()
 
     @property
-    def hvac_mode(self) -> str:
+    def hvac_mode(self) -> HVACMode:
         """Return hvac operation ie. heat, cool mode.
-        Need to be one of HVAC_MODE_*.
+        Need to be one of HVACMode.*.
         """        
         if not self._airzone_aidoo.get_is_machine_on():
-            return HVAC_MODE_OFF
+            return HVACMode.OFF
 
         current_op = self._airzone_aidoo.get_operation_mode().name
         return AIDO_MODE_TO_HVAC_MAP[current_op]        
 
 
     @property
-    def hvac_modes(self) -> List[str]:
+    def hvac_modes(self) -> List[HVACMode]:
         """Return the list of available hvac operation modes.
         Need to be a subset of HVAC_MODES.
         """        
         return AIDO_HVAC_MODES
 
-    def set_hvac_mode(self, hvac_mode: str) -> None:
+    def set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         """Set new target hvac mode."""
-        if hvac_mode == HVAC_MODE_OFF:
+        if hvac_mode == HVACMode.OFF:
             self.turn_off()
             return
 

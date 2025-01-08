@@ -3,25 +3,20 @@ DEFAULT_DEVICE_ID = 1
 DEFAULT_DEVICE_CLASS = 'innobus'
 DEFAULT_SPEED_AS_PER = False
 SYSTEM_TYPES = ["innobus", "aidoo", "localapi"]
-
 from airzone.localapi import OperationMode
-from homeassistant.components.climate.const import (
+from homeassistant.components.climate import (
     FAN_AUTO,
     FAN_HIGH,
     FAN_LOW,
     FAN_MEDIUM,
-    HVAC_MODE_AUTO,
-    HVAC_MODE_COOL,
-    HVAC_MODE_DRY,
-    HVAC_MODE_FAN_ONLY,
-    HVAC_MODE_HEAT,
-    HVAC_MODE_HEAT_COOL,
-    HVAC_MODE_OFF,
     PRESET_NONE,
-    SUPPORT_FAN_MODE,
-    SUPPORT_PRESET_MODE,
-    SUPPORT_TARGET_TEMPERATURE,
+    ClimateEntityFeature,
+    HVACMode,
 )
+from homeassistant.const import Platform
+
+PLATFORMS = [Platform.CLIMATE]
+
 
 ### Innobus Extra Attributes
 ATTR_IS_ZONE_GRID_OPENED = 'is_zone_grid_opened'
@@ -56,51 +51,51 @@ AVAILABLE_ATTRIBUTES_ZONE = {
     ATTR_DIF_CURRENT_TEMP: 'get_dif_current_temp'
 }
 
-ZONE_HVAC_MODES = [HVAC_MODE_AUTO, HVAC_MODE_HEAT_COOL, HVAC_MODE_OFF]
+ZONE_HVAC_MODES = [HVACMode.AUTO, HVACMode.HEAT_COOL,  HVACMode.OFF]
 PRESET_SLEEP = 'SLEEP'
 ZONE_PRESET_MODES = [PRESET_NONE, PRESET_SLEEP]
 ZONE_FAN_MODES = {FAN_AUTO: 'AUTOMATIC', FAN_LOW: 'SPEED_1', FAN_MEDIUM: 'SPEED_2', FAN_HIGH: 'SPEED_3'}
 ZONE_FAN_MODES_R = dict(zip(ZONE_FAN_MODES.values(),ZONE_FAN_MODES.keys()))
-ZONE_SUPPORT_FLAGS = SUPPORT_TARGET_TEMPERATURE | SUPPORT_FAN_MODE | SUPPORT_PRESET_MODE
+ZONE_SUPPORT_FLAGS = ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.FAN_MODE | ClimateEntityFeature.PRESET_MODE
 
-MACHINE_HVAC_MODES = [HVAC_MODE_FAN_ONLY, HVAC_MODE_HEAT, HVAC_MODE_COOL, HVAC_MODE_OFF]
+MACHINE_HVAC_MODES = [HVACMode.FAN_ONLY, HVACMode.HEAT,  HVACMode.COOL,  HVACMode.OFF]
 PRESET_COMBINED_MODE = 'AIR&FLOOR'
 PRESET_AIR_MODE = 'AIRE'
 PRESET_FLOOR_MODE = 'FLOOR'
 MACHINE_PRESET_MODES = [PRESET_AIR_MODE, PRESET_FLOOR_MODE, PRESET_COMBINED_MODE]
-MACHINE_SUPPORT_FLAGS = SUPPORT_PRESET_MODE
+MACHINE_SUPPORT_FLAGS = ClimateEntityFeature.PRESET_MODE
 
 # LocalAPI Modes
 
-LOCALAPI_ZONE_HVAC_MODES = [HVAC_MODE_HEAT_COOL, HVAC_MODE_OFF]
-LOCALAPI_ZONE_SUPPORT_FLAGS =  SUPPORT_TARGET_TEMPERATURE
+LOCALAPI_ZONE_HVAC_MODES = [HVACMode.HEAT_COOL,  HVACMode.OFF]
+LOCALAPI_ZONE_SUPPORT_FLAGS =  ClimateEntityFeature.TARGET_TEMPERATURE
 
-LOCALAPI_MACHINE_SUPPORT_FLAGS =  SUPPORT_FAN_MODE
+LOCALAPI_MACHINE_SUPPORT_FLAGS =  ClimateEntityFeature.FAN_MODE
 
-LOCALAPI_MACHINE_HVAC_MODES = [HVAC_MODE_OFF, 
-                            HVAC_MODE_COOL, 
-                            HVAC_MODE_HEAT, 
-                            HVAC_MODE_FAN_ONLY, 
-                            HVAC_MODE_DRY,
-                            HVAC_MODE_AUTO] 
+LOCALAPI_MACHINE_HVAC_MODES = [ HVACMode.OFF, 
+                             HVACMode.COOL, 
+                            HVACMode.HEAT, 
+                            HVACMode.FAN_ONLY, 
+                            HVACMode.DRY,
+                            HVACMode.AUTO] 
 
 
 LOCALAPI_HVAC_MODE_MAP = {
-    HVAC_MODE_OFF: OperationMode.STOP,
-    HVAC_MODE_COOL: OperationMode.COOLING,
-    HVAC_MODE_HEAT: OperationMode.HEATING,
-    HVAC_MODE_FAN_ONLY: OperationMode.FAN,
-    HVAC_MODE_DRY: OperationMode.DRY,
-    HVAC_MODE_AUTO: OperationMode.AUTO
+    HVACMode.OFF: OperationMode.STOP,
+    HVACMode.COOL: OperationMode.COOLING,
+    HVACMode.HEAT: OperationMode.HEATING,
+    HVACMode.FAN_ONLY: OperationMode.FAN,
+    HVACMode.DRY: OperationMode.DRY,
+    HVACMode.AUTO: OperationMode.AUTO
 }
 
 LOCALAPI_MODE_TO_HVAC_MAP = {
-    'STOP': HVAC_MODE_OFF,
-    'COOLING': HVAC_MODE_COOL,
-    'AUTO': HVAC_MODE_AUTO,
-    'HEATING': HVAC_MODE_HEAT,
-    'FAN': HVAC_MODE_FAN_ONLY,
-    'DRY': HVAC_MODE_DRY
+    'STOP':  HVACMode.OFF,
+    'COOLING':  HVACMode.COOL,
+    'AUTO': HVACMode.AUTO,
+    'HEATING': HVACMode.HEAT,
+    'FAN': HVACMode.FAN_ONLY,
+    'DRY': HVACMode.DRY
 }
 
 
@@ -109,28 +104,28 @@ LOCALAPI_MODE_TO_HVAC_MAP = {
 
 CONF_SPEED_PERCENTAGE = "speed_as_percentage"
 
-AIDO_HVAC_MODES = [HVAC_MODE_AUTO, 
-                HVAC_MODE_FAN_ONLY, 
-                HVAC_MODE_HEAT, 
-                HVAC_MODE_COOL, 
-                HVAC_MODE_OFF, 
-                HVAC_MODE_DRY]
+AIDO_HVAC_MODES = [HVACMode.AUTO, 
+                   HVACMode.FAN_ONLY, 
+                   HVACMode.HEAT, 
+                   HVACMode.COOL, 
+                   HVACMode.OFF, 
+                   HVACMode.DRY]
 
 #TODO: SWING_MODES =Louvres?
-AIDO_SUPPORT_FLAGS = SUPPORT_TARGET_TEMPERATURE | SUPPORT_FAN_MODE
+AIDO_SUPPORT_FLAGS = ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.FAN_MODE
 
 AIDO_HVAC_MODE_MAP = {
-    HVAC_MODE_COOL:'COOLING',
-    HVAC_MODE_AUTO:'AUTO',
-    HVAC_MODE_HEAT:'HEATING',
-    HVAC_MODE_FAN_ONLY:'FAN',
-    HVAC_MODE_DRY:'DRY'
+    HVACMode.COOL:'COOLING',
+    HVACMode.AUTO:'AUTO',
+    HVACMode.HEAT:'HEATING',
+    HVACMode.FAN_ONLY:'FAN',
+    HVACMode.DRY:'DRY'
 }
 
 AIDO_MODE_TO_HVAC_MAP = {
-    'COOLING': HVAC_MODE_COOL,
-    'AUTO': HVAC_MODE_AUTO,
-    'HEATING': HVAC_MODE_HEAT,
-    'FAN': HVAC_MODE_FAN_ONLY,
-    'DRY': HVAC_MODE_DRY
+    'COOLING':  HVACMode.COOL,
+    'AUTO': HVACMode.AUTO,
+    'HEATING': HVACMode.HEAT,
+    'FAN': HVACMode.FAN_ONLY,
+    'DRY': HVACMode.DRY
 }
